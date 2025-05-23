@@ -8,7 +8,6 @@ import com.piper_trail.blog.shared.domain.Admin;
 import com.piper_trail.blog.shared.domain.AdminRepository;
 import com.piper_trail.blog.shared.exception.AuthenticationException;
 import com.piper_trail.blog.shared.exception.TwoFactorAuthenticationException;
-import dev.samstevens.totp.exceptions.QrGenerationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,6 +24,7 @@ public class AuthenticationService {
   private final JwtService jwtService;
   private final TotpService totpService;
   private final JwtProperties jwtProperties;
+  private final AdminTotpService adminTotpService;
 
   // 1단계 인증: username, password
   public AuthResponse authenticateFirstStep(LoginRequest request) {
@@ -46,7 +46,7 @@ public class AuthenticationService {
     }
 
     // TOTP 가 설정되지 않은 경우 -> QR 코드 생성
-    String qrCodeDataUrl = generateQrCodeForTotp(admin);
+    String qrCodeDataUrl = adminTotpService.setupTotpForAdmin(admin);
     return AuthResponse.builder().qrCodeDataUrl(qrCodeDataUrl).build();
   }
 
@@ -96,7 +96,7 @@ public class AuthenticationService {
       throw new AuthenticationException("Invalid refresh token");
     }
 
-    if (!adminRepository.findByUsername(username).isPresent()) {
+    if (adminRepository.findByUsername(username).isEmpty()) {
       throw new AuthenticationException("Invalid refresh token");
     }
 
@@ -106,22 +106,5 @@ public class AuthenticationService {
         .accessToken(newAccessToken)
         .accessTokenExpiresInSeconds(jwtProperties.getExpiration() / 1000)
         .build();
-  }
-
-  /** TOTP 설정용 QR 코드 생성 */
-  @Transactional
-  public String generateQrCodeForTotp(Admin admin) {
-    String secret = admin.getTotpSecret();
-    if (secret == null) {
-      secret = totpService.generateSecret();
-      admin.setTotpSecret(secret);
-      adminRepository.save(admin);
-    }
-
-    try {
-      return totpService.getQrCodeDataUrl(admin.getUsername(), secret);
-    } catch (QrGenerationException e) {
-      throw new AuthenticationException("QR 코드 생성 실패");
-    }
   }
 }

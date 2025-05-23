@@ -1,6 +1,5 @@
 package com.piper_trail.blog.command.auth;
 
-import com.piper_trail.blog.infrastructure.security.TotpService;
 import com.piper_trail.blog.shared.domain.Admin;
 import com.piper_trail.blog.shared.domain.AdminRepository;
 import com.piper_trail.blog.shared.event.AdminLoginEvent;
