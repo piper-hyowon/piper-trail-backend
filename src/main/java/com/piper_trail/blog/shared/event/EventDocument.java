@@ -16,6 +16,9 @@ public class EventDocument {
 
   @Id private String id;
 
+  @Indexed(unique = true)
+  private String eventId; // UUID
+
   @Indexed private String aggregateId;
 
   @Indexed private String eventType;

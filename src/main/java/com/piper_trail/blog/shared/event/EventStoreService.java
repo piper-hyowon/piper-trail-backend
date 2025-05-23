@@ -33,7 +33,7 @@ public class EventStoreService {
 
     EventDocument eventDocument =
         EventDocument.builder()
-            .id(event.getEventId())
+            .eventId(event.getEventId())
             .aggregateId(event.getAggregateId())
             .eventType(event.getEventType())
             .payload(payload)
@@ -52,7 +52,7 @@ public class EventStoreService {
     log.debug("Marking event as published: {}", event.getEventId());
 
     eventRepository
-        .findById(event.getEventId())
+        .findByEventId(event.getEventId())
         .ifPresent(
             eventDocument -> {
               eventDocument.setPublished(true);
@@ -64,11 +64,6 @@ public class EventStoreService {
   /** 도메인 이벤트를 MongoDB에 저장 가능한 Map으로 변환 */
   private Map<String, Object> convertEventToPayload(DomainEvent event) {
     Map<String, Object> payload = new HashMap<>();
-
-    payload.put("eventId", event.getEventId());
-    payload.put("aggregateId", event.getAggregateId());
-    payload.put("eventType", event.getEventType());
-    payload.put("timestamp", event.getTimestamp());
 
     Class<?> eventClass = event.getClass();
 
