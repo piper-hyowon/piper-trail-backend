@@ -8,8 +8,8 @@ import java.util.regex.Pattern;
 @Component
 public class SlugGenerator {
 
-  private static final Pattern NONLATIN = Pattern.compile("[^\\w-]");
-  private static final Pattern WHITESPACE = Pattern.compile("[\\s]");
+  private static final Pattern NONLATIN = Pattern.compile("[^\\w가-힣-]");
+  private static final Pattern WHITESPACE = Pattern.compile("\\s");
 
   public String generateSlug(String title) {
     if (title == null || title.trim().isEmpty()) {
@@ -17,9 +17,11 @@ public class SlugGenerator {
     }
 
     String nowhitespace = WHITESPACE.matcher(title).replaceAll("-");
-    String normalized = Normalizer.normalize(nowhitespace, Normalizer.Form.NFD);
+    String normalized = Normalizer.normalize(nowhitespace, Normalizer.Form.NFKC);
     String slug = NONLATIN.matcher(normalized).replaceAll("");
 
-    return slug.toLowerCase().replaceAll("-+", "-").replaceAll("^-|-$", "");
+    slug = slug.toLowerCase().replaceAll("-+", "-").replaceAll("^-|-$", "");
+
+    return slug.isEmpty() ? "untitled" : slug;
   }
 }
