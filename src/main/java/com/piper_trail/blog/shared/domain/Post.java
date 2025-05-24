@@ -32,7 +32,9 @@ public class Post {
   private String slug;
 
   @TextIndexed(weight = 2)
-  private String content;
+  private String markdownContent;
+
+  private String renderedContent;
 
   @Indexed private String category;
 
