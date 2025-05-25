@@ -33,7 +33,9 @@ public class CacheConfig {
             "category-stats",
             "statistics",
             "comments",
-            "search"));
+            "search",
+            "dashboard",
+            "post-stats"));
     cacheManager.setCaffeine(
         Caffeine.newBuilder()
             .expireAfterWrite(cacheTtl, TimeUnit.SECONDS)

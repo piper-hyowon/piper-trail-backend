@@ -13,9 +13,8 @@ public class ETagGenerator {
     long timestamp = (lastModified != null) ? lastModified.toEpochMilli() : 0L;
 
     String data = id + "_" + timestamp;
-    String etag = "\"" + DigestUtils.md5DigestAsHex(data.getBytes(StandardCharsets.UTF_8)) + "\"";
 
-    return etag;
+    return "\"" + DigestUtils.md5DigestAsHex(data.getBytes(StandardCharsets.UTF_8)) + "\"";
   }
 
   public String generateETag(Object... data) {

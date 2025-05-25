@@ -6,6 +6,7 @@ import com.piper_trail.blog.shared.domain.VisitorTracking;
 import com.piper_trail.blog.shared.event.PostViewedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -27,6 +28,9 @@ public class StatisticsCommandService {
 
   @EventListener
   @Transactional
+  @CacheEvict(
+      value = {"dashboard", "post-stats"},
+      allEntries = true)
   public void handlePostViewedEvent(PostViewedEvent event) {
     try {
       updatePostViewCount(event.getPostId());
