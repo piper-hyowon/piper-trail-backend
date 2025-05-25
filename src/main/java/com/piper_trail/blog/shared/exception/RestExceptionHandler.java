@@ -10,8 +10,10 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.util.HashMap;
@@ -20,9 +22,26 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class RestExceptionHandler {
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
+      MissingServletRequestParameterException ex) {
+    log.error("Missing request parameter: {}", ex.getParameterName());
+    ErrorResponse errorResponse =
+        new ErrorResponse("Required parameter '" + ex.getParameterName() + "' is missing");
+    return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+  }
+
+  @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+  public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(
+      MethodArgumentTypeMismatchException ex) {
+    log.error("Parameter type mismatch: {}", ex.getName());
+    ErrorResponse errorResponse =
+        new ErrorResponse("Parameter '" + ex.getName() + "' has invalid type");
+    return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+  }
 
   @ExceptionHandler(NoHandlerFoundException.class)
-  public ResponseEntity<ErrorResponse> handleNoHandlerFoundException(NoHandlerFoundException ex) {
+  public ResponseEntity<ErrorResponse> handleNoHandlerFoundException() {
     ErrorResponse errorResponse = new ErrorResponse("No handler found");
     return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
   }
