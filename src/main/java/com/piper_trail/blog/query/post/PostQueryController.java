@@ -1,6 +1,8 @@
 package com.piper_trail.blog.query.post;
 
 import com.piper_trail.blog.shared.dto.PagedResponse;
+import com.piper_trail.blog.shared.util.ETagGenerator;
+import com.piper_trail.blog.shared.util.HttpCacheUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,21 +17,29 @@ import java.util.List;
 @RequiredArgsConstructor
 public class PostQueryController {
   private final PostQueryService postQueryService;
+  private final ETagGenerator etagGenerator;
 
   @GetMapping
   public ResponseEntity<PagedResponse<PostSummaryResponse>> getAllPosts(
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
-      @RequestParam(defaultValue = "desc") String sortDir) {
+      @RequestParam(defaultValue = "desc") String sortDir,
+      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
     Sort.Direction direction =
         sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
 
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-
     PagedResponse<PostSummaryResponse> response = postQueryService.getAllPosts(pageable);
-    return ResponseEntity.ok(response);
+
+    String etag =
+        etagGenerator.generateETag("posts", page, size, sortBy, sortDir, response.getTotal());
+    if (etag.equals(ifNoneMatch)) {
+      return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_LIST_CACHE);
+    }
+
+    return HttpCacheUtils.createCachedResponse(response, etag, HttpCacheUtils.POST_LIST_CACHE);
   }
 
   @GetMapping("/search")
@@ -40,7 +50,8 @@ public class PostQueryController {
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
-      @RequestParam(defaultValue = "desc") String sortDir) {
+      @RequestParam(defaultValue = "desc") String sortDir,
+      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
     Sort.Direction direction =
         sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
@@ -57,21 +68,46 @@ public class PostQueryController {
             .build();
 
     PagedResponse<PostSummaryResponse> response = postQueryService.searchPosts(request);
-    return ResponseEntity.ok(response);
+
+    String etag =
+        etagGenerator.generateETag(
+            "search",
+            request.getKeyword(),
+            request.getCategory(),
+            request.getPage(),
+            request.getSize(),
+            response.getTotal());
+
+    if (etag.equals(ifNoneMatch)) {
+      return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_LIST_CACHE);
+    }
+
+    return HttpCacheUtils.createCachedResponse(response, etag, HttpCacheUtils.POST_LIST_CACHE);
   }
 
   @GetMapping("/{slug}")
-  public ResponseEntity<PostDetailResponse> getPost(@PathVariable String slug) {
+  public ResponseEntity<PostDetailResponse> getPostBySlug(
+      @PathVariable String slug,
+      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
+
     PostDetailResponse response = postQueryService.getPostBySlug(slug);
 
-    return ResponseEntity.ok(response);
+    String etag = etagGenerator.generateETag(response.getId(), response.getUpdatedAt());
+
+    if (HttpCacheUtils.isETagMatched(etag, ifNoneMatch)) {
+      return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_DETAIL_CACHE);
+    }
+
+    return HttpCacheUtils.createCachedResponse(
+        response, etag, HttpCacheUtils.POST_DETAIL_CACHE, response.getUpdatedAt());
   }
 
   @GetMapping("/category/{category}")
-  public ResponseEntity<PagedResponse<PostSummaryResponse>> getAllPostsByCategory(
+  public ResponseEntity<PagedResponse<PostSummaryResponse>> getPostsByCategory(
       @PathVariable String category,
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size) {
+      @RequestParam(defaultValue = "10") int size,
+      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
     Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
 
@@ -82,29 +118,61 @@ public class PostQueryController {
       response = postQueryService.getPostsByCategory(category, pageable);
     }
 
-    return ResponseEntity.ok(response);
+    String etag = etagGenerator.generateETag("category", category, page, size, response.getTotal());
+
+    if (etag.equals(ifNoneMatch)) {
+      return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_LIST_CACHE);
+    }
+
+    return HttpCacheUtils.createCachedResponse(response, etag, HttpCacheUtils.POST_LIST_CACHE);
   }
 
   @GetMapping("/tag/{tag}")
   public ResponseEntity<PagedResponse<PostSummaryResponse>> getPostsByTag(
       @PathVariable String tag,
       @RequestParam(defaultValue = "0") int page,
-      @RequestParam(defaultValue = "10") int size) {
+      @RequestParam(defaultValue = "10") int size,
+      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
     Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
     PagedResponse<PostSummaryResponse> response = postQueryService.getPostsByTag(tag, pageable);
-    return ResponseEntity.ok(response);
+
+    String etag = etagGenerator.generateETag("tag", tag, page, size, response.getTotal());
+
+    if (etag.equals(ifNoneMatch)) {
+      return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_LIST_CACHE);
+    }
+
+    return HttpCacheUtils.createCachedResponse(response, etag, HttpCacheUtils.POST_LIST_CACHE);
   }
 
   @GetMapping("/categories")
-  public ResponseEntity<List<String>> getAllCategories() {
+  public ResponseEntity<List<String>> getAllCategories(
+      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
+
     List<String> categories = postQueryService.getAllCategories();
-    return ResponseEntity.ok(categories);
+
+    String etag = etagGenerator.generateETag("categories", categories.size());
+
+    if (etag.equals(ifNoneMatch)) {
+      return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.METADATA_CACHE);
+    }
+
+    return HttpCacheUtils.createCachedResponse(categories, etag, HttpCacheUtils.METADATA_CACHE);
   }
 
   @GetMapping("/tags")
-  public ResponseEntity<List<String>> getAllTags() {
+  public ResponseEntity<List<String>> getAllTags(
+      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
+
     List<String> tags = postQueryService.getAllTags();
-    return ResponseEntity.ok(tags);
+
+    String etag = etagGenerator.generateETag("tags", tags.size());
+
+    if (etag.equals(ifNoneMatch)) {
+      return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.METADATA_CACHE);
+    }
+
+    return HttpCacheUtils.createCachedResponse(tags, etag, HttpCacheUtils.METADATA_CACHE);
   }
 }
