@@ -5,6 +5,7 @@ import com.piper_trail.blog.shared.domain.PostRepository;
 import com.piper_trail.blog.shared.dto.PagedResponse;
 import com.piper_trail.blog.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,14 +13,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
-import org.springframework.data.mongodb.core.query.TextCriteria;
-import org.springframework.data.mongodb.core.query.TextQuery;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,11 +29,15 @@ public class PostQueryService {
   private final PostRepository postRepository;
   private final MongoTemplate mongoTemplate;
 
+  @Cacheable(
+      value = "posts",
+      key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
   public PagedResponse<PostSummaryResponse> getAllPosts(Pageable pageable) {
     Page<Post> postPage = postRepository.findAll(pageable);
     return convertToPagedResponse(postPage);
   }
 
+  @Cacheable(value = "post", key = "#slug")
   public PostDetailResponse getPostBySlug(String slug) {
     Post post =
         postRepository
@@ -43,6 +47,9 @@ public class PostQueryService {
     return convertToDetailResponse(post);
   }
 
+  @Cacheable(
+      value = "posts",
+      key = "'category_' + #category + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
   public PagedResponse<PostSummaryResponse> getPostsByCategory(String category, Pageable pageable) {
     Query query = new Query(Criteria.where("category").is(category)).with(pageable);
 
@@ -53,6 +60,9 @@ public class PostQueryService {
     return createPagedResponse(posts, pageable, total);
   }
 
+  @Cacheable(
+      value = "posts",
+      key = "'tag_' + #tag + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
   public PagedResponse<PostSummaryResponse> getPostsByTag(String tag, Pageable pageable) {
     Query query = new Query(Criteria.where("tags").in(tag)).with(pageable);
 
@@ -62,6 +72,10 @@ public class PostQueryService {
     return createPagedResponse(posts, pageable, total);
   }
 
+  @Cacheable(
+      value = "search",
+      key =
+          "#request.keyword + '_' + #request.category + '_' + #request.tags + '_' + #request.page + '_' + #request.size")
   public PagedResponse<PostSummaryResponse> searchPosts(PostSearchRequest request) {
     Query query = buildSearchQuery(request);
     Pageable pageable =
@@ -78,10 +92,14 @@ public class PostQueryService {
     return createPagedResponse(posts, pageable, total);
   }
 
+  @Cacheable(value = "categories")
   public List<String> getAllCategories() {
     return mongoTemplate.findDistinct("category", Post.class, String.class);
   }
 
+  @Cacheable(
+      value = "posts",
+      key = "'uncategorized_' + #pageable.pageNumber + '_' + #pageable.pageSize")
   public PagedResponse<PostSummaryResponse> getUncategorizedPosts(Pageable pageable) {
     Query query = new Query(Criteria.where("category").in(null, "")).with(pageable);
 
@@ -92,6 +110,7 @@ public class PostQueryService {
     return createPagedResponse(posts, pageable, total);
   }
 
+  @Cacheable(value = "tags")
   public List<String> getAllTags() {
     Query query = new Query();
     query.addCriteria(Criteria.where("tags").exists(true).ne(null).not().size(0));
@@ -107,9 +126,15 @@ public class PostQueryService {
     Query query = new Query();
 
     if (request.getKeyword() != null && !request.getKeyword().trim().isEmpty()) {
-      TextCriteria textCriteria =
-          TextCriteria.forDefaultLanguage().matchingAny(request.getKeyword().split("\\s+"));
-      query = TextQuery.queryText(textCriteria);
+      String keyword = request.getKeyword().trim();
+
+      Criteria searchCriteria =
+          new Criteria()
+              .orOperator(
+                  Criteria.where("title").regex(Pattern.quote(keyword), "i"),
+                  Criteria.where("markdownContent").regex(Pattern.quote(keyword), "i"));
+
+      query.addCriteria(searchCriteria);
     }
 
     if (request.getCategory() != null && !request.getCategory().trim().isEmpty()) {
