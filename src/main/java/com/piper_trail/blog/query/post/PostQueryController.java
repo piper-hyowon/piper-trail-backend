@@ -3,6 +3,7 @@ package com.piper_trail.blog.query.post;
 import com.piper_trail.blog.shared.dto.PagedResponse;
 import com.piper_trail.blog.shared.event.EventPublisher;
 import com.piper_trail.blog.shared.event.PostViewedEvent;
+import com.piper_trail.blog.shared.util.ClientIpUtils;
 import com.piper_trail.blog.shared.util.ETagGenerator;
 import com.piper_trail.blog.shared.util.HttpCacheUtils;
 import jakarta.servlet.http.Cookie;
@@ -103,7 +104,7 @@ public class PostQueryController {
 
     String visitorId = extractOrCreateVisitorId(request, response);
 
-    String ipAddress = extractClientIp(request);
+    String ipAddress = ClientIpUtils.extractClientIp(request);
     String userAgent = request.getHeader("User-Agent");
     String referer = request.getHeader("Referer");
 
@@ -145,23 +146,6 @@ public class PostQueryController {
     return newVisitorId;
   }
 
-  private String extractClientIp(HttpServletRequest request) {
-    String clientIp = request.getHeader("X-Forwarded-For");
-
-    if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
-      clientIp = request.getHeader("X-Real-IP");
-    }
-
-    if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
-      clientIp = request.getRemoteAddr();
-    }
-
-    if (clientIp != null && clientIp.contains(",")) {
-      clientIp = clientIp.split(",")[0].trim();
-    }
-
-    return clientIp != null ? clientIp : "unknown";
-  }
 
   @GetMapping("/category/{category}")
   public ResponseEntity<PagedResponse<PostSummaryResponse>> getPostsByCategory(
