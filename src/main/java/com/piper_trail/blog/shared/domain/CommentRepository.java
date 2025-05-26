@@ -13,6 +13,6 @@ public interface CommentRepository extends MongoRepository<Comment, String> {
   @Query("{'postId': ?0, 'approved': true, 'hidden': false}")
   List<Comment> findVisibleByPostId(String postId);
 
-  @Query("{'ipAddress': ?0, 'createdAt': {$gte: ?1}}")
+  @Query(value = "{'ipAddress': ?0, 'createdAt': {$gte: ?1}}", count = true)
   long countRecentByIpAddress(String ipAddress, Instant after);
 }
