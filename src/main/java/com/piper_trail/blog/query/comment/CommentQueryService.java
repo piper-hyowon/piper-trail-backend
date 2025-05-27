@@ -3,7 +3,10 @@ package com.piper_trail.blog.query.comment;
 import com.piper_trail.blog.command.comment.CommentResponse;
 import com.piper_trail.blog.shared.domain.Comment;
 import com.piper_trail.blog.shared.domain.CommentRepository;
+import com.piper_trail.blog.shared.dto.PagedResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,10 +19,9 @@ import java.util.stream.Collectors;
 public class CommentQueryService {
   private final CommentRepository commentRepository;
 
-  public List<CommentResponse> getCommentsByPostId(String postId) {
-    return commentRepository.findVisibleByPostId(postId).stream()
-        .map(this::convertToResponse)
-        .collect(Collectors.toList());
+  public PagedResponse<CommentResponse> getCommentsByPostId(String postId, Pageable pageable) {
+    Page<Comment> commentPage = commentRepository.findByPostId(postId, pageable);
+    return convertToPagedResponse(commentPage);
   }
 
   public List<CommentAdminResponse> getAllComments() {
@@ -29,13 +31,25 @@ public class CommentQueryService {
         .collect(Collectors.toList());
   }
 
+  private PagedResponse<CommentResponse> convertToPagedResponse(Page<Comment> commentPage) {
+    List<CommentResponse> content =
+        commentPage.getContent().stream().map(this::convertToResponse).collect(Collectors.toList());
+
+    return PagedResponse.<CommentResponse>builder()
+        .content(content)
+        .page(commentPage.getNumber())
+        .size(commentPage.getSize())
+        .total(commentPage.getTotalElements())
+        .build();
+  }
+
   private CommentResponse convertToResponse(Comment comment) {
     return CommentResponse.builder()
         .id(comment.getId())
         .author(comment.getAuthor())
-        .content(comment.getContent())
-        .fontFamily(comment.getFontFamily())
-        .textColor(comment.getTextColor())
+        .content(comment.isNeedsReview() ? "검토 중입니다." : comment.getContent())
+        .fontFamily(comment.isNeedsReview() ? Comment.FontFamily.DEFAULT : comment.getFontFamily())
+        .textColor(comment.isNeedsReview() ? Comment.TextColor.DEFAULT : comment.getTextColor())
         .createdAt(comment.getCreatedAt())
         .reviewNeeded(comment.isNeedsReview())
         .build();

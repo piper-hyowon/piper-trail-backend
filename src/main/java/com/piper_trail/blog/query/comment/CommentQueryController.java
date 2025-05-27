@@ -1,13 +1,12 @@
 package com.piper_trail.blog.query.comment;
 
 import com.piper_trail.blog.command.comment.CommentResponse;
+import com.piper_trail.blog.shared.dto.PagedResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -18,8 +17,12 @@ public class CommentQueryController {
   private final CommentQueryService commentQueryService;
 
   @GetMapping("posts/{postId}/comments")
-  public ResponseEntity<List<CommentResponse>> getComments(@PathVariable String postId) {
-    return ResponseEntity.ok(commentQueryService.getCommentsByPostId(postId));
+  public ResponseEntity<PagedResponse<CommentResponse>> getComments(
+      @PathVariable String postId,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    return ResponseEntity.ok(
+        commentQueryService.getCommentsByPostId(postId, PageRequest.of(page, size)));
   }
 
   @GetMapping("/comments")
