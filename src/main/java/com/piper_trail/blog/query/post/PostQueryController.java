@@ -146,15 +146,19 @@ public class PostQueryController {
     return newVisitorId;
   }
 
-
   @GetMapping("/category/{category}")
   public ResponseEntity<PagedResponse<PostSummaryResponse>> getPostsByCategory(
       @PathVariable String category,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,
+      @RequestParam(defaultValue = "createdAt") String sortBy,
+      @RequestParam(defaultValue = "desc") String sortDir,
       @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
-    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+    Sort.Direction direction =
+        sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
 
     PagedResponse<PostSummaryResponse> response;
     if ("null".equals(category)) {
@@ -163,7 +167,9 @@ public class PostQueryController {
       response = postQueryService.getPostsByCategory(category, pageable);
     }
 
-    String etag = etagGenerator.generateETag("category", category, page, size, response.getTotal());
+    String etag =
+        etagGenerator.generateETag(
+            "category", category, page, size, sortBy, sortDir, response.getTotal());
 
     if (HttpCacheUtils.isETagMatched(etag, ifNoneMatch)) {
       return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_LIST_CACHE);
@@ -177,12 +183,16 @@ public class PostQueryController {
       @PathVariable String tag,
       @RequestParam(defaultValue = "0") int page,
       @RequestParam(defaultValue = "10") int size,
+      @RequestParam(defaultValue = "createdAt") String sortBy,
+      @RequestParam(defaultValue = "desc") String sortDir,
       @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
-    Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+    Sort.Direction direction =
+        sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
+    Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
     PagedResponse<PostSummaryResponse> response = postQueryService.getPostsByTag(tag, pageable);
 
-    String etag = etagGenerator.generateETag("tag", tag, page, size, response.getTotal());
+    String etag = etagGenerator.generateETag("tag", tag, page, size, sortBy, sortDir, response.getTotal());
 
     if (HttpCacheUtils.isETagMatched(etag, ifNoneMatch)) {
       return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_LIST_CACHE);

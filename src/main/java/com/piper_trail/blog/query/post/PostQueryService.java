@@ -49,9 +49,15 @@ public class PostQueryService {
 
   @Cacheable(
       value = "posts",
-      key = "'category_' + #category + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+      key =
+          "'category_' + #category + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
   public PagedResponse<PostSummaryResponse> getPostsByCategory(String category, Pageable pageable) {
+    System.out.println("Received pageable: " + pageable);
+    System.out.println("Pageable sort: " + pageable.getSort());
+
     Query query = new Query(Criteria.where("category").is(category)).with(pageable);
+
+    System.out.println("Final query: " + query);
 
     List<Post> posts = mongoTemplate.find(query, Post.class);
     long total =
@@ -62,7 +68,8 @@ public class PostQueryService {
 
   @Cacheable(
       value = "posts",
-      key = "'tag_' + #tag + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+      key =
+          "'tag_' + #tag + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
   public PagedResponse<PostSummaryResponse> getPostsByTag(String tag, Pageable pageable) {
     Query query = new Query(Criteria.where("tags").in(tag)).with(pageable);
 
