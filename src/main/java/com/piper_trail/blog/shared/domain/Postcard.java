@@ -15,9 +15,13 @@ public class Postcard {
   @Id private String id;
 
   private StampType stampType;
-  @Builder.Default private String nickname = "익명의 방문자";
+  private String nickname;
   private String message;
   private String ipAddress;
   private String userAgent;
   @CreatedDate private Instant createdAt;
+
+  public String getNickname() {
+    return nickname != null && !nickname.trim().isEmpty() ? nickname : "익명의 방문자";
+  }
 }

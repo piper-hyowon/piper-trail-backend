@@ -2,6 +2,7 @@ package com.piper_trail.blog.command.postcard;
 
 import com.piper_trail.blog.shared.domain.Postcard;
 import com.piper_trail.blog.shared.domain.PostcardRepository;
+import com.piper_trail.blog.shared.exception.RateLimitExceededException;
 import com.piper_trail.blog.shared.util.ClientIpUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -14,9 +15,13 @@ import org.springframework.stereotype.Service;
 public class PostcardCommandService {
 
   private final PostcardRepository postcardRepository;
+  private final PostcardRateLimiter postcardRateLimiter;
 
   public Postcard createPostcard(CreatePostcardRequest request, HttpServletRequest httpRequest) {
-    // TODO: 중복 체크 (같은 IP에서 1분 내 동일한 내용 등록 방지)
+    String ipAddress = ClientIpUtils.extractClientIp(httpRequest);
+    if (!postcardRateLimiter.isAllowed(ipAddress)) {
+      throw new RateLimitExceededException("너무 잦은 엽서");
+    }
 
     Postcard postcard =
         Postcard.builder()

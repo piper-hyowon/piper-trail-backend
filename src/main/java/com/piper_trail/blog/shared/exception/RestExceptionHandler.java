@@ -22,6 +22,14 @@ import java.util.Map;
 @RestControllerAdvice
 @Slf4j
 public class RestExceptionHandler {
+  @ExceptionHandler(RateLimitExceededException.class)
+  public ResponseEntity<ErrorResponse> handleRateLimitExceededException(
+      RateLimitExceededException ex) {
+    log.warn("Rate limit exceeded: {}", ex.getMessage());
+    ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+    return new ResponseEntity<>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
+  }
+
   @ExceptionHandler(MissingServletRequestParameterException.class)
   public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
       MissingServletRequestParameterException ex) {
