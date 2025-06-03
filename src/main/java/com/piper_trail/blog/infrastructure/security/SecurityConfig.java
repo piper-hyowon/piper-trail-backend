@@ -54,6 +54,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/error")
                     .permitAll()
+                    .requestMatchers("/wake-up")
+                    .permitAll()
                     .requestMatchers(HttpMethod.GET, "/postcards/**")
                     .permitAll()
                     .requestMatchers(HttpMethod.POST, "/postcards")
