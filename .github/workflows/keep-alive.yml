@@ -1,0 +1,10 @@
+name: Keep Alive
+on:
+  schedule:
+    - cron: '*/14 * * * *'  # 14분마다
+jobs:
+  wake-up:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wake up server
+        run: curl -f https://piper-trail-backend-production.up.railway.app/wake-up || true
