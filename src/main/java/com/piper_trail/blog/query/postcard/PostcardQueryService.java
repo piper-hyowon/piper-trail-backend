@@ -40,6 +40,7 @@ public class PostcardQueryService {
         .stampType(postcard.getStampType())
         .nickname(postcard.getNickname())
         .message(postcard.getMessage())
+        .createdAt(postcard.getCreatedAt())
         .build();
   }
 }
