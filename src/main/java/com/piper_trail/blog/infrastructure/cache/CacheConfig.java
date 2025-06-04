@@ -24,23 +24,27 @@ public class CacheConfig {
   @Bean
   public CacheManager cacheManager() {
     CaffeineCacheManager cacheManager = new CaffeineCacheManager();
+    // TODO :미사용 캐시 이름 삭제
     cacheManager.setCacheNames(
-        Arrays.asList(
-            "posts",
-            "post",
-            "tags",
-            "categories",
-            "category-stats",
-            "statistics",
-            "comments",
-            "search",
-            "dashboard",
-            "post-stats"));
+            Arrays.asList(
+                    "posts",
+                    "posts_list",
+                    "posts_search",
+                    "post",
+                    "tags",
+                    "categories",
+                    "metadata",
+                    "category-stats",
+                    "statistics",
+                    "comments",
+                    "search",
+                    "dashboard",
+                    "post-stats"));
     cacheManager.setCaffeine(
-        Caffeine.newBuilder()
-            .expireAfterWrite(cacheTtl, TimeUnit.SECONDS)
-            .maximumSize(cacheMaxSize)
-            .recordStats());
+            Caffeine.newBuilder()
+                    .expireAfterWrite(cacheTtl, TimeUnit.SECONDS)
+                    .maximumSize(cacheMaxSize)
+                    .recordStats());
     return cacheManager;
   }
 }
