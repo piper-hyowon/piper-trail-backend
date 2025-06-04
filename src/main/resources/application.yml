@@ -1,0 +1,46 @@
+spring:
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  web:
+    resources:
+      add-mappings: false
+  application:
+    name: piper-trail-blog
+  data:
+    mongodb:
+      uri: ${MONGO_URI}
+      auto-index-creation: true
+
+server:
+  port: ${PORT:8080}
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+    com.piper_trail.blog: DEBUG
+    org.springframework.data.mongodb: DEBUG
+    org.springframework.boot.autoconfigure.mongo: DEBUG
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration: 3600000
+    refresh-expiration: 2592000000
+  cache:
+    ttl: 3600
+    max-size: 1000
+
+comment:
+  spam:
+    keywords: ${COMMENT_SPAM_KEYWORDS}
+    hide-threshold: 0.7
+    max-comments-per-hour: 5
+    review-threshold: 0.4
+
+postcard:
+  rate-limit:
+    requests-per-minute: 3
+    requests-per-hour: 10
