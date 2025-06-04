@@ -42,7 +42,7 @@ public class PostQueryController {
     PagedResponse<PostSummaryResponse> response = postQueryService.getAllPosts(pageable);
 
     String etag =
-        etagGenerator.generateETag("posts", page, size, sortBy, sortDir, response.getTotal());
+        etagGenerator.generateETag("posts_all", page, size, sortBy, sortDir, response.getTotal());
     if (HttpCacheUtils.isETagMatched(etag, ifNoneMatch)) {
       return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_LIST_CACHE);
     }
@@ -79,9 +79,10 @@ public class PostQueryController {
 
     String etag =
         etagGenerator.generateETag(
-            "search",
+            "posts_search",
             request.getKeyword(),
             request.getCategory(),
+            request.getTags(),
             request.getPage(),
             request.getSize(),
             response.getTotal());
@@ -169,7 +170,7 @@ public class PostQueryController {
 
     String etag =
         etagGenerator.generateETag(
-            "category", category, page, size, sortBy, sortDir, response.getTotal());
+            "posts_category", category, page, size, sortBy, sortDir, response.getTotal());
 
     if (HttpCacheUtils.isETagMatched(etag, ifNoneMatch)) {
       return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_LIST_CACHE);
@@ -192,7 +193,9 @@ public class PostQueryController {
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
     PagedResponse<PostSummaryResponse> response = postQueryService.getPostsByTag(tag, pageable);
 
-    String etag = etagGenerator.generateETag("tag", tag, page, size, sortBy, sortDir, response.getTotal());
+    String etag =
+        etagGenerator.generateETag(
+            "posts_tag", tag, page, size, sortBy, sortDir, response.getTotal());
 
     if (HttpCacheUtils.isETagMatched(etag, ifNoneMatch)) {
       return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_LIST_CACHE);

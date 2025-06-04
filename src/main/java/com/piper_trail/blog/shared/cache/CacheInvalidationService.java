@@ -8,41 +8,43 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
-// 캐시 무효화
 public class CacheInvalidationService {
 
   private final CacheManager cacheManager;
 
   @EventListener
+  @Order(1)
   public void handlePostCreated(PostCreatedEvent event) {
-    evictCache("posts");
-    evictCache("categories");
-    evictCache("tags");
+    evictCache("posts_list");
+    evictCache("posts_search");
+    evictCache("metadata");
   }
 
   @EventListener
+  @Order(1)
   public void handlePostUpdated(PostUpdatedEvent event) {
-    evictFromCache("post", event.getSlug());
+    evictFromCache("post", "slug:" + event.getSlug());
     if (event.isSlugChanged()) {
-      evictFromCache("post", event.getPreviousSlug());
+      evictFromCache("post", "slug:" + event.getPreviousSlug());
     }
-
-    evictCache("posts");
-    evictCache("categories");
-    evictCache("tags");
+    evictCache("posts_list");
+    evictCache("posts_search");
+    evictCache("metadata");
   }
 
   @EventListener
+  @Order(1)
   public void handlePostDeleted(PostDeletedEvent event) {
-    evictFromCache("post", event.getSlug());
-    evictCache("posts");
-    evictCache("categories");
-    evictCache("tags");
+    evictFromCache("post", "slug:" + event.getSlug());
+    evictCache("posts_list");
+    evictCache("posts_search");
+    evictCache("metadata");
   }
 
   private void evictCache(String cacheName) {
@@ -51,14 +53,14 @@ public class CacheInvalidationService {
       if (cache != null) {
         cache.clear();
       } else {
-        log.warn("Cache not found: {}", cacheName);
+        log.warn("Cache '{}' not found", cacheName);
       }
     } catch (Exception e) {
-      log.warn("Failed to evict cache: {}", cacheName, e);
+      log.warn("Failed to clear cache '{}'", cacheName, e);
     }
   }
 
-  private void evictFromCache(String cacheName, String key) {
+  public void evictFromCache(String cacheName, String key) {
     if (key == null || key.trim().isEmpty()) {
       log.warn("Invalid cache key provided for cache: {}", cacheName);
       return;
@@ -69,10 +71,10 @@ public class CacheInvalidationService {
       if (cache != null) {
         cache.evict(key);
       } else {
-        log.warn("Cache not found: {}", cacheName);
+        log.warn("Cache '{}' not found", cacheName);
       }
     } catch (Exception e) {
-      log.warn("Failed to evict key '{}' from cache: {}", key, cacheName, e);
+      log.warn("Failed to evict key '{}' from cache '{}'", key, cacheName, e);
     }
   }
 }

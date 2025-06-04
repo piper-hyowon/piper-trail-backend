@@ -30,14 +30,15 @@ public class PostQueryService {
   private final MongoTemplate mongoTemplate;
 
   @Cacheable(
-      value = "posts",
-      key = "#pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
+      value = "posts_list",
+      key =
+          "'all:' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()")
   public PagedResponse<PostSummaryResponse> getAllPosts(Pageable pageable) {
     Page<Post> postPage = postRepository.findAll(pageable);
     return convertToPagedResponse(postPage);
   }
 
-  @Cacheable(value = "post", key = "#slug")
+  @Cacheable(value = "post", key = "'slug:' + #slug")
   public PostDetailResponse getPostBySlug(String slug) {
     Post post =
         postRepository
@@ -48,9 +49,9 @@ public class PostQueryService {
   }
 
   @Cacheable(
-      value = "posts",
+      value = "posts_list",
       key =
-          "'category_' + #category + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
+          "'category:' + #category + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()")
   public PagedResponse<PostSummaryResponse> getPostsByCategory(String category, Pageable pageable) {
     System.out.println("Received pageable: " + pageable);
     System.out.println("Pageable sort: " + pageable.getSort());
@@ -67,9 +68,9 @@ public class PostQueryService {
   }
 
   @Cacheable(
-      value = "posts",
+      value = "posts_list",
       key =
-          "'tag_' + #tag + '_' + #pageable.pageNumber + '_' + #pageable.pageSize + '_' + #pageable.sort.toString()")
+          "'tag:' + #tag + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()")
   public PagedResponse<PostSummaryResponse> getPostsByTag(String tag, Pageable pageable) {
     Query query = new Query(Criteria.where("tags").in(tag)).with(pageable);
 
@@ -80,9 +81,9 @@ public class PostQueryService {
   }
 
   @Cacheable(
-      value = "search",
+      value = "posts_search",
       key =
-          "#request.keyword + '_' + #request.category + '_' + #request.tags + '_' + #request.page + '_' + #request.size")
+          "'search:' + #request.keyword + ':' + (#request.category ?: 'null') + ':' + (#request.tags?.toString() ?: 'null') + ':' + #request.page + ':' + #request.size + ':' + #request.sortBy + ':' + #request.sortDirection")
   public PagedResponse<PostSummaryResponse> searchPosts(PostSearchRequest request) {
     Query query = buildSearchQuery(request);
     Pageable pageable =
@@ -99,14 +100,15 @@ public class PostQueryService {
     return createPagedResponse(posts, pageable, total);
   }
 
-  @Cacheable(value = "categories")
+  @Cacheable(value = "metadata", key = "'categories'")
   public List<String> getAllCategories() {
     return mongoTemplate.findDistinct("category", Post.class, String.class);
   }
 
   @Cacheable(
-      value = "posts",
-      key = "'uncategorized_' + #pageable.pageNumber + '_' + #pageable.pageSize")
+      value = "posts_list",
+      key =
+          "'uncategorized:' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()")
   public PagedResponse<PostSummaryResponse> getUncategorizedPosts(Pageable pageable) {
     Query query = new Query(Criteria.where("category").in(null, "")).with(pageable);
 
@@ -117,7 +119,7 @@ public class PostQueryService {
     return createPagedResponse(posts, pageable, total);
   }
 
-  @Cacheable(value = "tags")
+  @Cacheable(value = "metadata", key = "'tags'")
   public List<String> getAllTags() {
     Query query = new Query();
     query.addCriteria(Criteria.where("tags").exists(true).ne(null).not().size(0));
