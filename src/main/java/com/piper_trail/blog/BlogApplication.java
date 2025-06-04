@@ -13,6 +13,8 @@ public class BlogApplication {
 
       dotenv.entries().forEach(entry -> System.setProperty(entry.getKey(), entry.getValue()));
 
+      System.out.println(System.getProperty("MONGO_URI"));
+
       // 필수 환경변수 검증
       validateCriticalEnvironmentVariables();
 
