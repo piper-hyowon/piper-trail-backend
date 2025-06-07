@@ -4,3 +4,7 @@ logging:
     org.springframework.security: INFO
     org.springframework.web: INFO
     com.piper_trail.blog: INFO
+    org.springframework.data.mongodb: WARN
+    org.springframework.data.mongodb.core: WARN
+    org.springframework.data.mongodb.core.mapping.event: WARN
+    org.springframework.boot.autoconfigure.mongo: WARN
