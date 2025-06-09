@@ -17,10 +17,12 @@ import org.springframework.stereotype.Service;
 public class CacheInvalidationService {
 
   private final CacheManager cacheManager;
+  private final CacheVersionService cacheVersionService;
 
   @EventListener
   @Order(1)
   public void handlePostCreated(PostCreatedEvent event) {
+    cacheVersionService.incrementVersion();
     evictCache("posts_list");
     evictCache("posts_search");
     evictCache("metadata");
@@ -29,6 +31,7 @@ public class CacheInvalidationService {
   @EventListener
   @Order(1)
   public void handlePostUpdated(PostUpdatedEvent event) {
+    cacheVersionService.incrementVersion();
     evictFromCache("post", "slug:" + event.getSlug());
     if (event.isSlugChanged()) {
       evictFromCache("post", "slug:" + event.getPreviousSlug());
@@ -41,6 +44,7 @@ public class CacheInvalidationService {
   @EventListener
   @Order(1)
   public void handlePostDeleted(PostDeletedEvent event) {
+    cacheVersionService.incrementVersion();
     evictFromCache("post", "slug:" + event.getSlug());
     evictCache("posts_list");
     evictCache("posts_search");
