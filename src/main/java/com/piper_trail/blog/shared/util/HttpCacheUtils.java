@@ -19,6 +19,9 @@ public class HttpCacheUtils {
   public static final CacheControl METADATA_CACHE =
       CacheControl.maxAge(Duration.ofDays(1)).mustRevalidate();
 
+  public static final CacheControl POST_STATS_CACHE =
+      CacheControl.maxAge(Duration.ofMinutes(1)).mustRevalidate();
+
   public static <T> ResponseEntity<T> createCachedResponse(
       T body, String etag, CacheControl cacheControl) {
     return createCachedResponse(body, etag, cacheControl, null);

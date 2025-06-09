@@ -26,6 +26,7 @@ public class CacheConfig {
             "posts_list",
             "posts_search",
             "post",
+            "post_stats",
             "tags",
             "categories",
             "metadata",

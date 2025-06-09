@@ -16,6 +16,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -97,21 +98,9 @@ public class PostQueryController {
   @GetMapping("/{slug}")
   public ResponseEntity<PostDetailResponse> getPostBySlug(
       @PathVariable String slug,
-      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch,
-      HttpServletRequest request,
-      HttpServletResponse response) {
+      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
     PostDetailResponse postResponse = postQueryService.getPostBySlug(slug);
-
-    String visitorId = extractOrCreateVisitorId(request, response);
-
-    String ipAddress = ClientIpUtils.extractClientIp(request);
-    String userAgent = request.getHeader("User-Agent");
-    String referer = request.getHeader("Referer");
-
-    PostViewedEvent event =
-        new PostViewedEvent(postResponse.getId(), visitorId, ipAddress, userAgent, referer);
-    eventPublisher.publish(event);
 
     // HTTP 캐싱
     String etag = etagGenerator.generateETag(postResponse.getId(), postResponse.getUpdatedAt());
@@ -122,6 +111,33 @@ public class PostQueryController {
 
     return HttpCacheUtils.createCachedResponse(
         postResponse, etag, HttpCacheUtils.POST_DETAIL_CACHE, postResponse.getUpdatedAt());
+  }
+
+  @GetMapping("/{slug}/stats")
+  public ResponseEntity<PostStatsResponse> getPostStats(
+      @PathVariable String slug,
+      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch,
+      HttpServletRequest request,
+      HttpServletResponse response) {
+    String visitorId = extractOrCreateVisitorId(request, response);
+    String ipAddress = ClientIpUtils.extractClientIp(request);
+    String userAgent = request.getHeader("User-Agent");
+    String referer = request.getHeader("Referer");
+
+    PostStatsResponse statsResponse = postQueryService.getPostStatsBySlug(slug);
+
+    PostViewedEvent event =
+        new PostViewedEvent(statsResponse.getPostId(), visitorId, ipAddress, userAgent, referer);
+    eventPublisher.publish(event);
+
+    String etag = etagGenerator.generateETag("post_stats", slug, Instant.now());
+
+    if (HttpCacheUtils.isETagMatched(etag, ifNoneMatch)) {
+      return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_STATS_CACHE);
+    }
+
+    return HttpCacheUtils.createCachedResponse(
+        statsResponse, etag, HttpCacheUtils.POST_STATS_CACHE);
   }
 
   private String extractOrCreateVisitorId(

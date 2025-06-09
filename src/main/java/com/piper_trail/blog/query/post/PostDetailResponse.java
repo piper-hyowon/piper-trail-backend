@@ -16,7 +16,6 @@ public class PostDetailResponse {
   private String content;
   private String category;
   private List<String> tags;
-  private int viewCount;
   private Instant createdAt;
   private Instant updatedAt;
 

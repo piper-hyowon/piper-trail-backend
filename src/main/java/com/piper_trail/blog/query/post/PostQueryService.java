@@ -16,6 +16,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -219,11 +220,23 @@ public class PostQueryService {
         .content(post.getRenderedContent())
         .category(post.getCategory())
         .tags(post.getTags())
-        .viewCount(post.getViewCount())
         .createdAt(post.getCreatedAt())
         .updatedAt(post.getUpdatedAt())
         ._links(links)
         .build();
+  }
+
+  @Cacheable(value = "post_stats", key ="'slug:' + #slug")
+  public PostStatsResponse getPostStatsBySlug(String slug) {
+    Post post = postRepository.findBySlug(slug)
+            .orElseThrow(() -> new ResourceNotFoundException("post", slug));
+
+    return PostStatsResponse.builder()
+            .postId(post.getId())
+            .slug(post.getSlug())
+            .viewCount(post.getViewCount())
+            .lastUpdated(Instant.now())
+            .build();
   }
 
   private Map<String, PostDetailResponse.LinkInfo> buildHateoasLinks(Post post) {
