@@ -2,6 +2,7 @@ package com.piper_trail.blog.command.auth;
 
 import com.piper_trail.blog.infrastructure.security.AuthenticationService;
 import com.piper_trail.blog.shared.exception.AuthenticationException;
+import com.piper_trail.blog.shared.util.ClientIpUtils;
 import com.piper_trail.blog.shared.exception.TwoFactorAuthenticationException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -33,11 +34,12 @@ public class AuthController {
   public ResponseEntity<AuthResponse> login(
       @Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
     log.debug("Login request: {}", request);
+
+    String ipAddress = ClientIpUtils.extractClientIp(httpRequest);
+    String userAgent = httpRequest.getHeader("User-Agent");
+
     try {
       AuthResponse response = authenticationService.authenticateFirstStep(request);
-
-      String ipAddress = extractClientIp(httpRequest);
-      String userAgent = httpRequest.getHeader("User-Agent");
 
       // TODO: 로그인 이력 기록
       log.info("user: {} from IP: {}", request.getUsername(), ipAddress);
@@ -45,7 +47,10 @@ public class AuthController {
       return ResponseEntity.ok(response);
 
     } catch (AuthenticationException e) {
-      log.error(e.getMessage());
+      authCommandService.recordFailedLogin(
+          request.getUsername(), request.getPassword(), ipAddress, userAgent);
+      log.error("로그인 실패: {} {}", request.getUsername(), ipAddress);
+
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
   }
@@ -64,7 +69,7 @@ public class AuthController {
     try {
       AuthResponse response = authenticationService.authenticateSecondStep(request);
 
-      String ipAddress = extractClientIp(httpRequest);
+      String ipAddress = ClientIpUtils.extractClientIp(httpRequest);
       String userAgent = httpRequest.getHeader("User-Agent");
 
       authCommandService.recordSuccessfulLogin(request.getUsername(), ipAddress, userAgent);
@@ -89,32 +94,5 @@ public class AuthController {
     } catch (AuthenticationException e) {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
-  }
-
-  private String extractClientIp(HttpServletRequest request) {
-    String clientIp = request.getHeader("X-Forwarded-For");
-
-    if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
-      clientIp = request.getHeader("X-Real-IP");
-    }
-
-    if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
-      clientIp = request.getHeader("Proxy-Client-IP");
-    }
-
-    if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
-      clientIp = request.getHeader("WL-Proxy-Client-IP");
-    }
-
-    if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
-      clientIp = request.getRemoteAddr();
-    }
-
-    // X-Forwarded-For, 첫 번째가 원본
-    if (clientIp != null && clientIp.contains(",")) {
-      clientIp = clientIp.split(",")[0].trim();
-    }
-
-    return clientIp != null ? clientIp : "unknown";
   }
 }

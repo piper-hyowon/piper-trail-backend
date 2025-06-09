@@ -30,7 +30,6 @@ app:
     expiration: 3600000
     refresh-expiration: 2592000000
   cache:
-    ttl: 3600
     max-size: 1000
 
 comment:

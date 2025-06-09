@@ -9,15 +9,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableCaching
 public class CacheConfig {
-
-  @Value("${app.cache.ttl:3600}")
-  private int cacheTtl;
-
   @Value("${app.cache.max-size:1000}")
   private int cacheMaxSize;
 
@@ -26,25 +21,21 @@ public class CacheConfig {
     CaffeineCacheManager cacheManager = new CaffeineCacheManager();
     // TODO :미사용 캐시 이름 삭제
     cacheManager.setCacheNames(
-            Arrays.asList(
-                    "posts",
-                    "posts_list",
-                    "posts_search",
-                    "post",
-                    "tags",
-                    "categories",
-                    "metadata",
-                    "category-stats",
-                    "statistics",
-                    "comments",
-                    "search",
-                    "dashboard",
-                    "post-stats"));
-    cacheManager.setCaffeine(
-            Caffeine.newBuilder()
-                    .expireAfterWrite(cacheTtl, TimeUnit.SECONDS)
-                    .maximumSize(cacheMaxSize)
-                    .recordStats());
+        Arrays.asList(
+            "posts",
+            "posts_list",
+            "posts_search",
+            "post",
+            "tags",
+            "categories",
+            "metadata",
+            "category-stats",
+            "statistics",
+            "comments",
+            "search",
+            "dashboard",
+            "post-stats"));
+    cacheManager.setCaffeine(Caffeine.newBuilder().maximumSize(cacheMaxSize).recordStats());
     return cacheManager;
   }
 }

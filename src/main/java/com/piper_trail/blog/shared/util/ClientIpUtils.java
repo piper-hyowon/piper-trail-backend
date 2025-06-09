@@ -5,8 +5,7 @@ import lombok.experimental.UtilityClass;
 
 @UtilityClass
 public class ClientIpUtils {
-
-  public static String extractClientIp(HttpServletRequest request) {
+  public String extractClientIp(HttpServletRequest request) {
     String clientIp = request.getHeader("X-Forwarded-For");
 
     if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
@@ -14,11 +13,20 @@ public class ClientIpUtils {
     }
 
     if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
+      clientIp = request.getHeader("Proxy-Client-IP");
+    }
+
+    if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
+      clientIp = request.getHeader("WL-Proxy-Client-IP");
+    }
+
+    if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
       clientIp = request.getRemoteAddr();
     }
 
+    // X-Forwarded-For, 첫 번째가 원본
     if (clientIp != null && clientIp.contains(",")) {
-      clientIp = clientIp.split(",")[0].trim(); // 첫 번째가 실제 클라이언트
+      clientIp = clientIp.split(",")[0].trim();
     }
 
     return clientIp != null ? clientIp : "unknown";

@@ -2,7 +2,7 @@ package com.piper_trail.blog.command.auth;
 
 import com.piper_trail.blog.shared.domain.Admin;
 import com.piper_trail.blog.shared.domain.AdminRepository;
-import com.piper_trail.blog.shared.event.AdminLoginEvent;
+import com.piper_trail.blog.shared.event.AdminLoginAttemptEvent;
 import com.piper_trail.blog.shared.event.EventPublisher;
 import com.piper_trail.blog.shared.exception.AuthenticationException;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +26,15 @@ public class AuthCommandService {
             .findByUsername(username)
             .orElseThrow(() -> new AuthenticationException("Invalid username"));
 
-    eventPublisher.publish(new AdminLoginEvent(admin.getId(), username, ipAddress, userAgent));
+    eventPublisher.publish(
+        AdminLoginAttemptEvent.success(admin.getId(), username, ipAddress, userAgent));
+  }
+
+  // 로그인 실패 기록
+  @Transactional
+  public void recordFailedLogin(
+      String username, String attemptedPassword, String ipAddress, String userAgent) {
+    eventPublisher.publish(
+        AdminLoginAttemptEvent.failure(username, attemptedPassword, ipAddress, userAgent));
   }
 }

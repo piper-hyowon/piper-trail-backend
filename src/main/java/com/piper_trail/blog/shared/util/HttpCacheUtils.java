@@ -9,10 +9,12 @@ import java.util.Objects;
 
 public class HttpCacheUtils {
   public static final CacheControl POST_DETAIL_CACHE =
-      CacheControl.maxAge(Duration.ofHours(2)).mustRevalidate();
+      CacheControl.maxAge(Duration.ofDays(365)) // 1년
+          .mustRevalidate(); // ETag로 검증
 
   public static final CacheControl POST_LIST_CACHE =
-      CacheControl.maxAge(Duration.ofHours(1)).mustRevalidate();
+      CacheControl.maxAge(Duration.ofDays(30)) // 한 달
+          .mustRevalidate();
 
   public static final CacheControl METADATA_CACHE =
       CacheControl.maxAge(Duration.ofDays(1)).mustRevalidate();
