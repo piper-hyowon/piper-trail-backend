@@ -54,12 +54,7 @@ public class PostQueryService {
       key =
           "'category:' + #category + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()")
   public PagedResponse<PostSummaryResponse> getPostsByCategory(String category, Pageable pageable) {
-    System.out.println("Received pageable: " + pageable);
-    System.out.println("Pageable sort: " + pageable.getSort());
-
     Query query = new Query(Criteria.where("category").is(category)).with(pageable);
-
-    System.out.println("Final query: " + query);
 
     List<Post> posts = mongoTemplate.find(query, Post.class);
     long total =
@@ -200,6 +195,7 @@ public class PostQueryService {
     return PostSummaryResponse.builder()
         .id(post.getId())
         .title(post.getTitle())
+        .subtitle(post.getSubtitle())
         .slug(post.getSlug())
         .preview(preview)
         .category(post.getCategory())

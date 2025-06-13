@@ -11,6 +11,7 @@ import java.util.List;
 public class PostSummaryResponse {
   private String id;
   private String title;
+  private String subtitle;
   private String slug;
   private String preview; // 컨텐츠 앞부분 일부
   private String category;
