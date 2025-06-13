@@ -242,10 +242,11 @@ public class PostQueryService {
     String subtitle =
         isEnglish && post.getSubtitleEn() != null ? post.getSubtitleEn() : post.getSubtitle();
 
+    // TODO: RenderedContent 제거
     String content =
-        isEnglish && post.getRenderedContentEn() != null
-            ? post.getRenderedContentEn()
-            : post.getRenderedContent();
+        isEnglish && post.getMarkdownContentEn() != null
+            ? post.getMarkdownContentEn()
+            : post.getMarkdownContent();
 
     Map<String, PostDetailResponse.LinkInfo> links = buildHateoasLinks(post, lang);
 
