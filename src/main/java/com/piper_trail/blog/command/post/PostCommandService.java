@@ -37,6 +37,13 @@ public class PostCommandService {
             .slug(uniqueSlug)
             .markdownContent(request.getMarkdownContent())
             .renderedContent(markdownRenderer.renderToHtml(request.getMarkdownContent()))
+            .titleEn(request.getTitleEn())
+            .subtitleEn(request.getSubtitleEn())
+            .markdownContentEn(request.getMarkdownContentEn())
+            .renderedContentEn(
+                request.getMarkdownContentEn() != null
+                    ? markdownRenderer.renderToHtml(request.getMarkdownContentEn())
+                    : null)
             .category(request.getCategory())
             .tags(request.getTags())
             .viewCount(0)

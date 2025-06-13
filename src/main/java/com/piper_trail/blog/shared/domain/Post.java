@@ -39,6 +39,17 @@ public class Post {
 
   private String renderedContent;
 
+  @TextIndexed(weight = 3)
+  private String titleEn;
+
+  @TextIndexed(weight = 2)
+  private String subtitleEn;
+
+  @TextIndexed(weight = 2)
+  private String markdownContentEn;
+
+  private String renderedContentEn;
+
   @Indexed private String category;
 
   @Indexed @Builder.Default private List<String> tags = new ArrayList<>();

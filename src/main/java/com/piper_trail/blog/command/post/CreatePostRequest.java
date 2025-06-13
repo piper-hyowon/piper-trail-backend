@@ -19,6 +19,14 @@ public class CreatePostRequest {
 
   @NotBlank private String markdownContent;
 
+  @Size(max = 200)
+  private String titleEn;
+
+  @Size(max = 200)
+  private String subtitleEn;
+
+  private String markdownContentEn;
+
   @Size(max = 50)
   private String category;
 

@@ -1,5 +1,6 @@
 package com.piper_trail.blog.query.post;
 
+import com.piper_trail.blog.shared.config.Language;
 import com.piper_trail.blog.shared.dto.PagedResponse;
 import com.piper_trail.blog.shared.event.EventPublisher;
 import com.piper_trail.blog.shared.event.PostViewedEvent;
@@ -34,13 +35,14 @@ public class PostQueryController {
       @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortDir,
+      @Language String language,
       @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
     Sort.Direction direction =
         sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
 
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-    PagedResponse<PostSummaryResponse> response = postQueryService.getAllPosts(pageable);
+    PagedResponse<PostSummaryResponse> response = postQueryService.getAllPosts(pageable, language);
 
     String etag =
         etagGenerator.generateETag("posts_all", page, size, sortBy, sortDir, response.getTotal());
@@ -60,6 +62,7 @@ public class PostQueryController {
       @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortDir,
+      @Language String language,
       @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
     Sort.Direction direction =
@@ -76,7 +79,7 @@ public class PostQueryController {
             .sortDirection(direction)
             .build();
 
-    PagedResponse<PostSummaryResponse> response = postQueryService.searchPosts(request);
+    PagedResponse<PostSummaryResponse> response = postQueryService.searchPosts(request, language);
 
     String etag =
         etagGenerator.generateETag(
@@ -98,9 +101,10 @@ public class PostQueryController {
   @GetMapping("/{slug}")
   public ResponseEntity<PostDetailResponse> getPostBySlug(
       @PathVariable String slug,
+      @Language String language,
       @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
-    PostDetailResponse postResponse = postQueryService.getPostBySlug(slug);
+    PostDetailResponse postResponse = postQueryService.getPostBySlug(slug, language);
 
     // HTTP 캐싱
     String etag = etagGenerator.generateETag(postResponse.getId(), postResponse.getUpdatedAt());
@@ -170,6 +174,7 @@ public class PostQueryController {
       @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortDir,
+      @Language String language,
       @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
     Sort.Direction direction =
@@ -179,9 +184,9 @@ public class PostQueryController {
 
     PagedResponse<PostSummaryResponse> response;
     if ("null".equals(category)) {
-      response = postQueryService.getUncategorizedPosts(pageable);
+      response = postQueryService.getUncategorizedPosts(pageable, language);
     } else {
-      response = postQueryService.getPostsByCategory(category, pageable);
+      response = postQueryService.getPostsByCategory(category, pageable, language);
     }
 
     String etag =
@@ -202,12 +207,14 @@ public class PostQueryController {
       @RequestParam(defaultValue = "10") int size,
       @RequestParam(defaultValue = "createdAt") String sortBy,
       @RequestParam(defaultValue = "desc") String sortDir,
+      @Language String language,
       @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
 
     Sort.Direction direction =
         sortDir.equalsIgnoreCase("asc") ? Sort.Direction.ASC : Sort.Direction.DESC;
     Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
-    PagedResponse<PostSummaryResponse> response = postQueryService.getPostsByTag(tag, pageable);
+    PagedResponse<PostSummaryResponse> response =
+        postQueryService.getPostsByTag(tag, pageable, language);
 
     String etag =
         etagGenerator.generateETag(

@@ -11,9 +11,12 @@ import java.util.List;
 public class PostSummaryResponse {
   private String id;
   private String title;
+  private String titleEn;
   private String subtitle;
+  private String subtitleEn;
   private String slug;
   private String preview; // 컨텐츠 앞부분 일부
+  private String previewEn;
   private String category;
   private List<String> tags;
   private int viewCount;
