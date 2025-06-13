@@ -80,8 +80,12 @@ public class PostCommandService {
     String renderedContent = markdownRenderer.renderToHtml(request.getMarkdownContent());
 
     existingPost.setTitle(request.getTitle());
+    existingPost.setTitleEn(request.getTitleEn());
+    existingPost.setSubtitle(request.getSubtitle());
+    existingPost.setSubtitleEn(request.getSubtitleEn());
     existingPost.setSlug(newSlug);
     existingPost.setMarkdownContent(request.getMarkdownContent());
+    existingPost.setMarkdownContentEn(request.getMarkdownContentEn());
     existingPost.setRenderedContent(renderedContent);
     existingPost.setCategory(request.getCategory());
     existingPost.setTags(request.getTags());
