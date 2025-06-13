@@ -33,6 +33,7 @@ public class PostCommandService {
     Post post =
         Post.builder()
             .title(request.getTitle())
+            .subtitle(request.getSubtitle())
             .slug(uniqueSlug)
             .markdownContent(request.getMarkdownContent())
             .renderedContent(markdownRenderer.renderToHtml(request.getMarkdownContent()))

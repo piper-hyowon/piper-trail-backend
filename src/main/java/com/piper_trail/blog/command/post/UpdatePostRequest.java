@@ -13,6 +13,10 @@ public class UpdatePostRequest {
   @Size(max = 200)
   private String title;
 
+  @NotBlank
+  @Size(max = 200)
+  private String subtitle;
+
   @NotBlank private String markdownContent;
 
   @Size(max = 50)

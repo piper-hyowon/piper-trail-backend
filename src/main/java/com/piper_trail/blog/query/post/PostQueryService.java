@@ -216,6 +216,7 @@ public class PostQueryService {
     return PostDetailResponse.builder()
         .id(post.getId())
         .title(post.getTitle())
+        .subtitle(post.getSubtitle())
         .slug(post.getSlug())
         .content(post.getRenderedContent())
         .category(post.getCategory())
@@ -226,17 +227,19 @@ public class PostQueryService {
         .build();
   }
 
-  @Cacheable(value = "post_stats", key ="'slug:' + #slug")
+  @Cacheable(value = "post_stats", key = "'slug:' + #slug")
   public PostStatsResponse getPostStatsBySlug(String slug) {
-    Post post = postRepository.findBySlug(slug)
+    Post post =
+        postRepository
+            .findBySlug(slug)
             .orElseThrow(() -> new ResourceNotFoundException("post", slug));
 
     return PostStatsResponse.builder()
-            .postId(post.getId())
-            .slug(post.getSlug())
-            .viewCount(post.getViewCount())
-            .lastUpdated(Instant.now())
-            .build();
+        .postId(post.getId())
+        .slug(post.getSlug())
+        .viewCount(post.getViewCount())
+        .lastUpdated(Instant.now())
+        .build();
   }
 
   private Map<String, PostDetailResponse.LinkInfo> buildHateoasLinks(Post post) {

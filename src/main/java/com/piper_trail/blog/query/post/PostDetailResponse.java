@@ -12,6 +12,7 @@ import java.util.Map;
 public class PostDetailResponse {
   private String id;
   private String title;
+  private String subtitle;
   private String slug;
   private String content;
   private String category;

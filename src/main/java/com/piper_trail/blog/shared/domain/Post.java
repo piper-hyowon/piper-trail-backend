@@ -28,6 +28,9 @@ public class Post {
   @TextIndexed(weight = 3)
   private String title;
 
+  @TextIndexed(weight = 2)
+  private String subtitle;
+
   @Indexed(unique = true) // URL slug
   private String slug;
 
