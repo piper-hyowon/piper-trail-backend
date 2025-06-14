@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -96,6 +97,22 @@ public class PostQueryController {
     }
 
     return HttpCacheUtils.createCachedResponse(response, etag, HttpCacheUtils.POST_LIST_CACHE);
+  }
+
+  @GetMapping("/stats")
+  public ResponseEntity<Map<String, PostStatsResponse>> getBulkPostStats(
+      @RequestParam List<String> slugs,
+      @RequestHeader(value = "If-None-Match", required = false) String ifNoneMatch) {
+
+    Map<String, PostStatsResponse> statsMap = postQueryService.getBulkPostStats(slugs);
+
+    String etag = etagGenerator.generateETag("bulk_stats", slugs, statsMap.hashCode());
+
+    if (HttpCacheUtils.isETagMatched(etag, ifNoneMatch)) {
+      return HttpCacheUtils.createNotModifiedResponse(etag, HttpCacheUtils.POST_STATS_CACHE);
+    }
+
+    return HttpCacheUtils.createCachedResponse(statsMap, etag, HttpCacheUtils.POST_STATS_CACHE);
   }
 
   @GetMapping("/{slug}")

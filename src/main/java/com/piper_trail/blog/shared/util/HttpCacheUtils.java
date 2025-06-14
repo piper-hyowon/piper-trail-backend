@@ -13,8 +13,7 @@ public class HttpCacheUtils {
           .mustRevalidate(); // ETag로 검증
 
   public static final CacheControl POST_LIST_CACHE =
-      CacheControl.maxAge(Duration.ofDays(30)) // 한 달
-          .mustRevalidate();
+      CacheControl.maxAge(Duration.ofMinutes(5)).mustRevalidate();
 
   public static final CacheControl METADATA_CACHE =
       CacheControl.maxAge(Duration.ofDays(1)).mustRevalidate();

@@ -129,6 +129,32 @@ public class PostQueryService {
         .collect(Collectors.toList());
   }
 
+  @Cacheable(value = "post_stats", key = "'bulk:' + #slugs.hashCode()")
+  public Map<String, PostStatsResponse> getBulkPostStats(List<String> slugs) {
+    if (slugs == null || slugs.isEmpty()) {
+      return new HashMap<>();
+    }
+
+    Query query = new Query(Criteria.where("slug").in(slugs));
+    List<Post> posts = mongoTemplate.find(query, Post.class);
+
+    Map<String, PostStatsResponse> statsMap = new HashMap<>();
+    Instant now = Instant.now();
+
+    for (Post post : posts) {
+      PostStatsResponse stats =
+          PostStatsResponse.builder()
+              .postId(post.getId())
+              .slug(post.getSlug())
+              .viewCount(post.getViewCount())
+              .lastUpdated(now)
+              .build();
+      statsMap.put(post.getSlug(), stats);
+    }
+
+    return statsMap;
+  }
+
   private Query buildSearchQuery(PostSearchRequest request, String lang) {
     Query query = new Query();
 
