@@ -43,3 +43,11 @@ postcard:
   rate-limit:
     requests-per-minute: 3
     requests-per-hour: 10
+
+cloudflare:
+  r2:
+    account-id: ${CLOUDFLARE_ACCOUNT_ID}
+    access-key: ${R2_ACCESS_KEY}
+    secret-key: ${R2_SECRET_KEY}
+    bucket-name: piper-trail-images
+    public-url: https://pub-834e6a8ca8b74bccb09cae72c08f0110.r2.dev
