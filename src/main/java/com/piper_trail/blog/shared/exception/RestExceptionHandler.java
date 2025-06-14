@@ -30,6 +30,14 @@ public class RestExceptionHandler {
     return new ResponseEntity<>(errorResponse, HttpStatus.TOO_MANY_REQUESTS);
   }
 
+  @ExceptionHandler(VisitorInvalidPasswordException.class)
+  public ResponseEntity<ErrorResponse> handleVisitorInvalidPasswordException(
+      VisitorInvalidPasswordException ex) {
+    log.error("Invalid visitor password: {}", ex.getMessage());
+    ErrorResponse errorResponse = new ErrorResponse(ex.getMessage());
+    return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+  }
+
   @ExceptionHandler(MissingServletRequestParameterException.class)
   public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(
       MissingServletRequestParameterException ex) {
