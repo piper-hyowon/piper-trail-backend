@@ -231,27 +231,11 @@ public class PostQueryService {
     String subtitle =
         isEnglish && post.getSubtitleEn() != null ? post.getSubtitleEn() : post.getSubtitle();
 
-    String content =
-        isEnglish && post.getRenderedContentEn() != null
-            ? post.getRenderedContentEn()
-            : post.getRenderedContent();
-
-    String preview = "";
-    if (content != null && !content.trim().isEmpty()) {
-      String plainText = content.replaceAll("<[^>]*>", "");
-      int PREVIEW_LENGTH = 200;
-      preview =
-          plainText.length() > PREVIEW_LENGTH
-              ? plainText.substring(0, PREVIEW_LENGTH) + "..."
-              : plainText;
-    }
-
     return PostSummaryResponse.builder()
         .id(post.getId())
         .title(title)
         .subtitle(subtitle)
         .slug(post.getSlug())
-        .preview(preview)
         .category(post.getCategory())
         .tags(post.getTags())
         .viewCount(post.getViewCount())

@@ -22,11 +22,44 @@ public class PostDetailResponse {
 
   private Map<String, LinkInfo> _links;
 
+  private boolean isSeries;
+  private SeriesDetailResponse series;
+
   @Data
   @Builder
   public static class LinkInfo {
     private String href;
     private String method;
     private String title;
+  }
+
+  @Data
+  @Builder
+  public static class SeriesDetailResponse {
+    private String seriesId;
+    private String seriesTitle;
+    private String seriesSlug;
+    private String seriesDescription;
+    private int currentOrder;
+    private int totalCount;
+    private SeriesNavigationResponse navigation;
+  }
+
+  @Data
+  @Builder
+  public static class SeriesNavigationResponse {
+    private NavigationItem prev;
+    private NavigationItem next;
+    private List<NavigationItem> allPosts;
+  }
+
+  @Data
+  @Builder
+  public static class NavigationItem {
+    private String id;
+    private String title;
+    private String slug;
+    private int order;
+    private boolean current;
   }
 }

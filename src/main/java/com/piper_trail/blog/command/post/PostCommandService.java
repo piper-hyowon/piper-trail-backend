@@ -36,14 +36,9 @@ public class PostCommandService {
             .subtitle(request.getSubtitle())
             .slug(uniqueSlug)
             .markdownContent(request.getMarkdownContent())
-            .renderedContent(markdownRenderer.renderToHtml(request.getMarkdownContent()))
             .titleEn(request.getTitleEn())
             .subtitleEn(request.getSubtitleEn())
             .markdownContentEn(request.getMarkdownContentEn())
-            .renderedContentEn(
-                request.getMarkdownContentEn() != null
-                    ? markdownRenderer.renderToHtml(request.getMarkdownContentEn())
-                    : null)
             .category(request.getCategory())
             .tags(request.getTags())
             .viewCount(0)
@@ -77,8 +72,6 @@ public class PostCommandService {
       newSlug = ensureUniqueSlug(baseSlug, id);
     }
 
-    String renderedContent = markdownRenderer.renderToHtml(request.getMarkdownContent());
-
     existingPost.setTitle(request.getTitle());
     existingPost.setTitleEn(request.getTitleEn());
     existingPost.setSubtitle(request.getSubtitle());
@@ -86,7 +79,6 @@ public class PostCommandService {
     existingPost.setSlug(newSlug);
     existingPost.setMarkdownContent(request.getMarkdownContent());
     existingPost.setMarkdownContentEn(request.getMarkdownContentEn());
-    existingPost.setRenderedContent(renderedContent);
     existingPost.setCategory(request.getCategory());
     existingPost.setTags(request.getTags());
 
@@ -156,7 +148,6 @@ public class PostCommandService {
         .id(post.getId())
         .title(post.getTitle())
         .slug(post.getSlug())
-        .renderedContent(post.getRenderedContent())
         .category(post.getCategory())
         .tags(post.getTags())
         .viewCount(post.getViewCount())

@@ -15,11 +15,23 @@ public class PostSummaryResponse {
   private String subtitle;
   private String subtitleEn;
   private String slug;
-  private String preview; // 컨텐츠 앞부분 일부
-  private String previewEn;
   private String category;
   private List<String> tags;
   private int viewCount;
   private Instant createdAt;
   private Instant updatedAt;
+
+  private boolean isSeries;
+  private SeriesInfoResponse series;
+
+  @Data
+  @Builder
+  public static class SeriesInfoResponse {
+    private String seriesId;
+    private String seriesTitle;
+    private String seriesSlug;
+    private int currentOrder;
+    private int totalCount;
+    private boolean isLatest;
+  }
 }

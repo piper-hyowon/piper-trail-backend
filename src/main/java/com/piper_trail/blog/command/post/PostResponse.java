@@ -12,7 +12,7 @@ public class PostResponse {
   private String id;
   private String title;
   private String slug;
-  private String renderedContent;
+  private String content;
   private String category;
   private List<String> tags;
   private int viewCount;

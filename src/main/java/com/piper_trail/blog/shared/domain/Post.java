@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.index.TextIndexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -20,8 +22,11 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@CompoundIndexes({
+  @CompoundIndex(name = "series_order_idx", def = "{'series.seriesId': 1, 'series.order': 1}"),
+  @CompoundIndex(name = "type_created_idx", def = "{'isSeries': 1, 'createdAt': -1}")
+})
 public class Post {
-
   @Id private String id;
 
   @Indexed
@@ -37,8 +42,6 @@ public class Post {
   @TextIndexed(weight = 2)
   private String markdownContent;
 
-  private String renderedContent;
-
   @TextIndexed(weight = 3)
   private String titleEn;
 
@@ -47,8 +50,6 @@ public class Post {
 
   @TextIndexed(weight = 2)
   private String markdownContentEn;
-
-  private String renderedContentEn;
 
   @Indexed private String category;
 
@@ -60,5 +61,17 @@ public class Post {
 
   @LastModifiedDate private Instant updatedAt;
 
-  @Builder.Default private boolean published = false;
+  @Indexed @Builder.Default private boolean isSeries = false;
+
+  private SeriesInfo series;
+
+  @Data
+  @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
+  public static class SeriesInfo {
+    @Indexed private String seriesId;
+    private String seriesTitle;
+    private int order;
+  }
 }
