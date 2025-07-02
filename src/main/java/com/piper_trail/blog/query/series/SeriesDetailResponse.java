@@ -11,6 +11,7 @@ import java.util.List;
 public class SeriesDetailResponse {
   private String id;
   private String slug;
+  private String category;
   private String title;
   private String titleEn;
   private String description;

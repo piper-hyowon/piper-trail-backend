@@ -82,7 +82,6 @@ public class PostCommandService {
         order = series.getTotalCount() + 1;
       }
 
-      postBuilder.isSeries(true);
       postBuilder.series(
           Post.SeriesInfo.builder()
               .seriesId(series.getId())
@@ -105,7 +104,7 @@ public class PostCommandService {
             savedPost.getTags());
     eventPublisher.publish(event);
 
-    if (savedPost.isSeries()) {
+    if (savedPost.getSeries() != null) {
       SeriesPostAddedEvent seriesEvent =
           new SeriesPostAddedEvent(
               savedPost.getId(),

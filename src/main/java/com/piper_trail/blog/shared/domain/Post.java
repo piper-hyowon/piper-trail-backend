@@ -1,5 +1,6 @@
 package com.piper_trail.blog.shared.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -61,7 +62,7 @@ public class Post {
 
   @LastModifiedDate private Instant updatedAt;
 
-  @Indexed @Builder.Default private boolean isSeries = false;
+  @Indexed @Builder.Default @JsonIgnore private boolean isSeries = false;
 
   private SeriesInfo series;
 

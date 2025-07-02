@@ -31,6 +31,7 @@ public class SeriesQueryService {
     List<Post> posts = postRepository.findBySeriesId(series.getId(), Sort.by("series.order"));
 
     boolean isEnglish = "en".equalsIgnoreCase(lang);
+    String category = posts.isEmpty() ? null : posts.get(0).getCategory();
 
     List<SeriesDetailResponse.SeriesPostItem> postItems =
         posts.stream()
@@ -58,6 +59,7 @@ public class SeriesQueryService {
     return SeriesDetailResponse.builder()
         .id(series.getId())
         .slug(series.getSlug())
+        .category(category)
         .title(isEnglish && series.getTitleEn() != null ? series.getTitleEn() : series.getTitle())
         .titleEn(series.getTitleEn())
         .description(

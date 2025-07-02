@@ -25,8 +25,6 @@ public class PostDetailResponse {
   private Instant updatedAt;
 
   private Map<String, LinkInfo> _links;
-
-  private boolean isSeries;
   private SeriesDetailResponse series;
 
   @Data

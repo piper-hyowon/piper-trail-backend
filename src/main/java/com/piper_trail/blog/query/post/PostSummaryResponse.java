@@ -1,5 +1,6 @@
 package com.piper_trail.blog.query.post;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -24,8 +25,6 @@ public class PostSummaryResponse {
   private int viewCount;
   private Instant createdAt;
   private Instant updatedAt;
-
-  private boolean isSeries;
   private SeriesInfoResponse series;
 
   @Data
@@ -38,6 +37,7 @@ public class PostSummaryResponse {
     private String seriesSlug;
     private int currentOrder;
     private int totalCount;
+    @JsonProperty("isLatest")
     private boolean isLatest;
   }
 }

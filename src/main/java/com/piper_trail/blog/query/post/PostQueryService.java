@@ -65,7 +65,6 @@ public class PostQueryService {
             .tags(post.getTags())
             .createdAt(post.getCreatedAt())
             .updatedAt(post.getUpdatedAt())
-            .isSeries(post.isSeries())
             ._links(buildHateoasLinks(post, lang));
 
     // 시리즈 글인 경우 네비게이션 추가
@@ -143,6 +142,8 @@ public class PostQueryService {
         posts.stream()
             .map(post -> convertToSummaryResponseWithSeriesInfo(post, lang))
             .collect(Collectors.toList());
+
+    System.out.println(content);
 
     return PagedResponse.<PostSummaryResponse>builder()
         .content(content)
@@ -334,7 +335,6 @@ public class PostQueryService {
                 .viewCount(response.getViewCount())
                 .createdAt(response.getCreatedAt())
                 .updatedAt(response.getUpdatedAt())
-                .isSeries(true)
                 .series(
                     PostSummaryResponse.SeriesInfoResponse.builder()
                         .seriesId(series.getId())
@@ -502,7 +502,6 @@ public class PostQueryService {
             .tags(post.getTags())
             .createdAt(post.getCreatedAt())
             .updatedAt(post.getUpdatedAt())
-            .isSeries(post.isSeries())
             ._links(links);
 
     return builder.build();
