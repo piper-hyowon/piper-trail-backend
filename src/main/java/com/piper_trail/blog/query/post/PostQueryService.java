@@ -46,18 +46,37 @@ public class PostQueryService {
             .findBySlug(slug)
             .orElseThrow(() -> new ResourceNotFoundException("post", slug));
 
-    PostDetailResponse response = convertToDetailResponse(post, lang);
+    boolean isEnglish = "en".equalsIgnoreCase(lang);
 
+    PostDetailResponse.PostDetailResponseBuilder builder =
+        PostDetailResponse.builder()
+            .id(post.getId())
+            .title(isEnglish && post.getTitleEn() != null ? post.getTitleEn() : post.getTitle())
+            .subtitle(
+                isEnglish && post.getSubtitleEn() != null
+                    ? post.getSubtitleEn()
+                    : post.getSubtitle())
+            .slug(post.getSlug())
+            .content(
+                isEnglish && post.getMarkdownContentEn() != null
+                    ? post.getMarkdownContentEn()
+                    : post.getMarkdownContent())
+            .category(post.getCategory())
+            .tags(post.getTags())
+            .createdAt(post.getCreatedAt())
+            .updatedAt(post.getUpdatedAt())
+            .isSeries(post.isSeries())
+            ._links(buildHateoasLinks(post, lang));
+
+    // 시리즈 글인 경우 네비게이션 추가
     if (post.isSeries() && post.getSeries() != null) {
       Post.SeriesInfo seriesInfo = post.getSeries();
-      Series series = seriesRepository.findById(seriesInfo.getSeriesId()).orElse(null);
-
-      if (series != null) {
-        response.setSeries(buildSeriesDetail(post, series));
-      }
+      seriesRepository
+          .findById(seriesInfo.getSeriesId())
+          .ifPresent(series -> builder.series(buildSeriesDetail(post, series)));
     }
 
-    return response;
+    return builder.build();
   }
 
   @Cacheable(
@@ -296,15 +315,27 @@ public class PostQueryService {
     if (post.isSeries() && post.getSeries() != null) {
       Post.SeriesInfo seriesInfo = post.getSeries();
 
-      // 해당 시리즈의 최신글인지 확인
-      Optional<Post> latestPost = postRepository.findLatestBySeriesId(seriesInfo.getSeriesId());
-      boolean isLatest = latestPost.map(p -> p.getId().equals(post.getId())).orElse(false);
+      List<Post> latestPosts = postRepository.findLatestBySeriesId(seriesInfo.getSeriesId());
+      boolean isLatest =
+          !latestPosts.isEmpty() && latestPosts.getFirst().getId().equals(post.getId());
 
-      seriesRepository
-          .findById(seriesInfo.getSeriesId())
-          .ifPresent(
-              series -> {
-                response.setSeries(
+      Series series = seriesRepository.findById(seriesInfo.getSeriesId()).orElse(null);
+      if (series != null) {
+        response =
+            PostSummaryResponse.builder()
+                .id(response.getId())
+                .title(response.getTitle())
+                .titleEn(response.getTitleEn())
+                .subtitle(response.getSubtitle())
+                .subtitleEn(response.getSubtitleEn())
+                .slug(response.getSlug())
+                .category(response.getCategory())
+                .tags(response.getTags())
+                .viewCount(response.getViewCount())
+                .createdAt(response.getCreatedAt())
+                .updatedAt(response.getUpdatedAt())
+                .isSeries(true)
+                .series(
                     PostSummaryResponse.SeriesInfoResponse.builder()
                         .seriesId(series.getId())
                         .seriesTitle(series.getTitle())
@@ -312,8 +343,9 @@ public class PostQueryService {
                         .currentOrder(post.getSeries().getOrder())
                         .totalCount(series.getTotalCount())
                         .isLatest(isLatest)
-                        .build());
-              });
+                        .build())
+                .build();
+      }
     }
 
     return response;
@@ -450,11 +482,8 @@ public class PostQueryService {
     boolean isEnglish = "en".equalsIgnoreCase(lang);
 
     String title = isEnglish && post.getTitleEn() != null ? post.getTitleEn() : post.getTitle();
-
     String subtitle =
         isEnglish && post.getSubtitleEn() != null ? post.getSubtitleEn() : post.getSubtitle();
-
-    // TODO: RenderedContent 제거
     String content =
         isEnglish && post.getMarkdownContentEn() != null
             ? post.getMarkdownContentEn()
@@ -462,18 +491,21 @@ public class PostQueryService {
 
     Map<String, PostDetailResponse.LinkInfo> links = buildHateoasLinks(post, lang);
 
-    return PostDetailResponse.builder()
-        .id(post.getId())
-        .title(title)
-        .subtitle(subtitle)
-        .slug(post.getSlug())
-        .content(content)
-        .category(post.getCategory())
-        .tags(post.getTags())
-        .createdAt(post.getCreatedAt())
-        .updatedAt(post.getUpdatedAt())
-        ._links(links)
-        .build();
+    PostDetailResponse.PostDetailResponseBuilder builder =
+        PostDetailResponse.builder()
+            .id(post.getId())
+            .title(title)
+            .subtitle(subtitle)
+            .slug(post.getSlug())
+            .content(content)
+            .category(post.getCategory())
+            .tags(post.getTags())
+            .createdAt(post.getCreatedAt())
+            .updatedAt(post.getUpdatedAt())
+            .isSeries(post.isSeries())
+            ._links(links);
+
+    return builder.build();
   }
 
   @Cacheable(value = "post_stats", key = "'slug:' + #slug")

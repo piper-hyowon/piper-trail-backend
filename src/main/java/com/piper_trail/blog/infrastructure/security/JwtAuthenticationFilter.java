@@ -30,7 +30,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   @Override
   protected void doFilterInternal(
-          HttpServletRequest request, @NotNull HttpServletResponse response, @NotNull FilterChain filterChain)
+      HttpServletRequest request,
+      @NotNull HttpServletResponse response,
+      @NotNull FilterChain filterChain)
       throws ServletException, IOException {
 
     String authHeader = request.getHeader(AUTHORIZATION_HEADER);
@@ -93,6 +95,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     return path.startsWith("/auth/")
         || path.startsWith("/posts/") && "GET".equals(request.getMethod())
+        || path.startsWith("/series/")
         || path.startsWith("/comments/")
         || path.startsWith("/error");
   }

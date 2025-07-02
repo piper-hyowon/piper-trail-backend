@@ -50,6 +50,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers(HttpMethod.GET, "/posts/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/series/**")
+                    .permitAll()
                     .requestMatchers("/chat/**")
                     .permitAll()
                     .requestMatchers("/error")

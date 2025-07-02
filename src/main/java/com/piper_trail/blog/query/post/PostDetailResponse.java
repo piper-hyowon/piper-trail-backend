@@ -1,7 +1,9 @@
 package com.piper_trail.blog.query.post;
 
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
@@ -9,6 +11,8 @@ import java.util.Map;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PostDetailResponse {
   private String id;
   private String title;
@@ -27,6 +31,8 @@ public class PostDetailResponse {
 
   @Data
   @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
   public static class LinkInfo {
     private String href;
     private String method;
@@ -35,6 +41,8 @@ public class PostDetailResponse {
 
   @Data
   @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
   public static class SeriesDetailResponse {
     private String seriesId;
     private String seriesTitle;
@@ -47,6 +55,8 @@ public class PostDetailResponse {
 
   @Data
   @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
   public static class SeriesNavigationResponse {
     private NavigationItem prev;
     private NavigationItem next;
@@ -55,6 +65,8 @@ public class PostDetailResponse {
 
   @Data
   @Builder
+  @NoArgsConstructor
+  @AllArgsConstructor
   public static class NavigationItem {
     private String id;
     private String title;

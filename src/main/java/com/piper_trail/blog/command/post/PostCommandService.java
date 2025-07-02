@@ -42,11 +42,35 @@ public class PostCommandService {
             .viewCount(0);
 
     // 시리즈 글인 경우
-    if (request.getSeriesId() != null) {
+    if (request.getSeriesTitle() != null) {
       Series series =
           seriesRepository
-              .findById(request.getSeriesId())
-              .orElseThrow(() -> new ResourceNotFoundException("series", request.getSeriesId()));
+              .findByTitle(request.getSeriesTitle())
+              .orElseGet(
+                  () -> {
+                    // 시리즈가 없으면 새로 생성
+                    String seriesSlug =
+                        ensureUniqueSeriesSlug(
+                            slugGenerator.generateSlug(request.getSeriesTitle()));
+
+                    Series newSeries =
+                        Series.builder()
+                            .title(request.getSeriesTitle())
+                            .slug(seriesSlug)
+                            .description(
+                                request.getSeriesDescription() != null
+                                    ? request.getSeriesDescription()
+                                    : "")
+                            .totalCount(0)
+                            .build();
+                    return seriesRepository.save(newSeries);
+                  });
+
+      if (request.getSeriesDescription() != null
+          && !request.getSeriesDescription().equals(series.getDescription())) {
+        series.setDescription(request.getSeriesDescription());
+        seriesRepository.save(series);
+      }
 
       int order;
       if (request.getSeriesOrder() != null) {
@@ -95,6 +119,18 @@ public class PostCommandService {
     }
 
     return convertToResponse(savedPost);
+  }
+
+  private String ensureUniqueSeriesSlug(String baseSlug) {
+    String candidateSlug = baseSlug;
+    int counter = 1;
+
+    while (seriesRepository.existsBySlug(candidateSlug)) {
+      candidateSlug = baseSlug + "-" + counter;
+      counter++;
+    }
+
+    return candidateSlug;
   }
 
   @Transactional
@@ -154,5 +190,44 @@ public class PostCommandService {
         .createdAt(post.getCreatedAt())
         .updatedAt(post.getUpdatedAt())
         .build();
+  }
+
+  @Transactional
+  public PostResponse updatePost(String id, UpdatePostRequest request) {
+    Post existingPost =
+        postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("post: " + id));
+
+    String previousTitle = existingPost.getTitle();
+    String previousSlug = existingPost.getSlug();
+
+    String newSlug = existingPost.getSlug();
+    if (!request.getTitle().equals(previousTitle)) {
+      String baseSlug = slugGenerator.generateSlug(request.getTitle());
+      newSlug = ensureUniqueSlug(baseSlug, id);
+    }
+
+    existingPost.setTitle(request.getTitle());
+    existingPost.setTitleEn(request.getTitleEn());
+    existingPost.setSubtitle(request.getSubtitle());
+    existingPost.setSubtitleEn(request.getSubtitleEn());
+    existingPost.setSlug(newSlug);
+    existingPost.setMarkdownContent(request.getMarkdownContent());
+    existingPost.setMarkdownContentEn(request.getMarkdownContentEn());
+    existingPost.setCategory(request.getCategory());
+    existingPost.setTags(request.getTags());
+
+    Post updatedPost = postRepository.save(existingPost);
+
+    eventPublisher.publish(
+        new PostUpdatedEvent(
+            updatedPost.getId(),
+            updatedPost.getTitle(),
+            updatedPost.getSlug(),
+            updatedPost.getCategory(),
+            updatedPost.getTags(),
+            previousTitle,
+            previousSlug));
+
+    return convertToResponse(updatedPost);
   }
 }

@@ -31,7 +31,7 @@ public interface PostRepository extends MongoRepository<Post, String> {
   boolean existsBySeriesIdAndOrder(String seriesId, int order);
 
   @Query(value = "{ 'series.seriesId': ?0 }", sort = "{ 'series.order': -1 }")
-  Optional<Post> findLatestBySeriesId(String seriesId);
+  List<Post> findLatestBySeriesId(String seriesId);
 
   @Query(value = "{ 'series.seriesId': ?0 }", count = true)
   long countBySeriesId(String seriesId);
