@@ -11,7 +11,7 @@ public class SeriesPostAddedEvent extends AbstractDomainEvent {
   private final String slug;
   private final int order;
   private final int viewCount;
-  private final Instant createdAt;
+  private final Instant postCreatedAt;
 
   public SeriesPostAddedEvent(
       String postId,
@@ -20,7 +20,7 @@ public class SeriesPostAddedEvent extends AbstractDomainEvent {
       String slug,
       int order,
       int viewCount,
-      Instant createdAt) {
+      Instant postCreatedAt) {
     super();
     this.postId = postId;
     this.seriesId = seriesId;
@@ -28,7 +28,7 @@ public class SeriesPostAddedEvent extends AbstractDomainEvent {
     this.slug = slug;
     this.order = order;
     this.viewCount = viewCount;
-    this.createdAt = createdAt;
+    this.postCreatedAt = postCreatedAt;
   }
 
   @Override

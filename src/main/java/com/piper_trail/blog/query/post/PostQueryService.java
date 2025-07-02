@@ -2,24 +2,23 @@ package com.piper_trail.blog.query.post;
 
 import com.piper_trail.blog.shared.domain.Post;
 import com.piper_trail.blog.shared.domain.PostRepository;
+import com.piper_trail.blog.shared.domain.Series;
+import com.piper_trail.blog.shared.domain.SeriesRepository;
 import com.piper_trail.blog.shared.dto.PagedResponse;
 import com.piper_trail.blog.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
+import org.springframework.data.mongodb.MongoExpression;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.*;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -28,6 +27,7 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class PostQueryService {
   private final PostRepository postRepository;
+  private final SeriesRepository seriesRepository;
   private final MongoTemplate mongoTemplate;
 
   @Cacheable(
@@ -46,7 +46,18 @@ public class PostQueryService {
             .findBySlug(slug)
             .orElseThrow(() -> new ResourceNotFoundException("post", slug));
 
-    return convertToDetailResponse(post, lang);
+    PostDetailResponse response = convertToDetailResponse(post, lang);
+
+    if (post.isSeries() && post.getSeries() != null) {
+      Post.SeriesInfo seriesInfo = post.getSeries();
+      Series series = seriesRepository.findById(seriesInfo.getSeriesId()).orElse(null);
+
+      if (series != null) {
+        response.setSeries(buildSeriesDetail(post, series));
+      }
+    }
+
+    return response;
   }
 
   @Cacheable(
@@ -55,13 +66,71 @@ public class PostQueryService {
           "'category:' + #category + ':' + #lang + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()")
   public PagedResponse<PostSummaryResponse> getPostsByCategory(
       String category, Pageable pageable, String lang) {
-    Query query = new Query(Criteria.where("category").is(category)).with(pageable);
 
-    List<Post> posts = mongoTemplate.find(query, Post.class);
-    long total =
-        mongoTemplate.count(Query.query(Criteria.where("category").is(category)), Post.class);
+    if ("null".equals(category)) {
+      return getUncategorizedPosts(pageable, lang);
+    }
 
-    return createPagedResponse(posts, pageable, total, lang);
+    Aggregation aggregation =
+        Aggregation.newAggregation(
+            Aggregation.match(Criteria.where("category").is(category)),
+
+            // 일반글과 시리즈 최신글 분리
+            Aggregation.facet()
+                .and(Aggregation.match(Criteria.where("isSeries").is(false)))
+                .as("regularPosts")
+                .and(
+                    Aggregation.match(Criteria.where("isSeries").is(true)),
+                    Aggregation.sort(Sort.Direction.DESC, "series.order"),
+                    Aggregation.group("series.seriesId").first("$$ROOT").as("doc"))
+                .as("seriesPosts"),
+
+            // 두 결과 통합
+            Aggregation.project()
+                .and(
+                    AggregationExpression.from(
+                        MongoExpression.create(
+                            "$concatArrays: ['$regularPosts', '$seriesPosts.doc']")))
+                .as("allPosts"),
+            Aggregation.unwind("allPosts"),
+            Aggregation.replaceRoot("allPosts"),
+            Aggregation.sort(
+                pageable.getSort().isSorted()
+                    ? pageable.getSort()
+                    : Sort.by(Sort.Direction.DESC, "createdAt")),
+            Aggregation.skip(pageable.getOffset()),
+            Aggregation.limit(pageable.getPageSize()));
+
+    AggregationResults<Post> results = mongoTemplate.aggregate(aggregation, "posts", Post.class);
+
+    List<Post> posts = results.getMappedResults();
+
+    // 전체 카운트 (별도 쿼리)
+    long regularCount =
+        mongoTemplate.count(
+            Query.query(Criteria.where("category").is(category).and("isSeries").is(false)),
+            Post.class);
+    long seriesCount =
+        mongoTemplate
+            .findDistinct(
+                Query.query(Criteria.where("category").is(category).and("isSeries").is(true)),
+                "series.seriesId",
+                Post.class,
+                String.class)
+            .size();
+    long total = regularCount + seriesCount;
+
+    List<PostSummaryResponse> content =
+        posts.stream()
+            .map(post -> convertToSummaryResponseWithSeriesInfo(post, lang))
+            .collect(Collectors.toList());
+
+    return PagedResponse.<PostSummaryResponse>builder()
+        .content(content)
+        .page(pageable.getPageNumber())
+        .size(pageable.getPageSize())
+        .total(total)
+        .build();
   }
 
   @Cacheable(
@@ -108,13 +177,146 @@ public class PostQueryService {
       key =
           "'uncategorized:' + #lang + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()")
   public PagedResponse<PostSummaryResponse> getUncategorizedPosts(Pageable pageable, String lang) {
-    Query query = new Query(Criteria.where("category").in(null, "")).with(pageable);
+    Aggregation aggregation =
+        Aggregation.newAggregation(
+            Aggregation.match(Criteria.where("category").in(null, "")),
+            Aggregation.facet()
+                .and(Aggregation.match(Criteria.where("isSeries").is(false)))
+                .as("regularPosts")
+                .and(
+                    Aggregation.match(Criteria.where("isSeries").is(true)),
+                    Aggregation.sort(Sort.Direction.DESC, "series.order"),
+                    Aggregation.group("series.seriesId").first("$$ROOT").as("doc"))
+                .as("seriesPosts"),
+            Aggregation.project()
+                .and(
+                    AggregationExpression.from(
+                        MongoExpression.create(
+                            "$concatArrays: ['$regularPosts', '$seriesPosts.doc']")))
+                .as("allPosts"),
+            Aggregation.unwind("allPosts"),
+            Aggregation.replaceRoot("allPosts"),
+            Aggregation.sort(pageable.getSort()),
+            Aggregation.skip(pageable.getOffset()),
+            Aggregation.limit(pageable.getPageSize()));
 
-    List<Post> posts = mongoTemplate.find(query, Post.class);
-    long total =
-        mongoTemplate.count(Query.query(Criteria.where("category").in(null, "")), Post.class);
+    AggregationResults<Post> results = mongoTemplate.aggregate(aggregation, "posts", Post.class);
 
-    return createPagedResponse(posts, pageable, total, lang);
+    List<Post> posts = results.getMappedResults();
+
+    long regularCount =
+        mongoTemplate.count(
+            Query.query(Criteria.where("category").in(null, "").and("isSeries").is(false)),
+            Post.class);
+    long seriesCount =
+        mongoTemplate
+            .findDistinct(
+                Query.query(Criteria.where("category").in(null, "").and("isSeries").is(true)),
+                "series.seriesId",
+                Post.class,
+                String.class)
+            .size();
+    long total = regularCount + seriesCount;
+
+    List<PostSummaryResponse> content =
+        posts.stream()
+            .map(post -> convertToSummaryResponseWithSeriesInfo(post, lang))
+            .collect(Collectors.toList());
+
+    return PagedResponse.<PostSummaryResponse>builder()
+        .content(content)
+        .page(pageable.getPageNumber())
+        .size(pageable.getPageSize())
+        .total(total)
+        .build();
+  }
+
+  private PostDetailResponse.SeriesDetailResponse buildSeriesDetail(
+      Post currentPost, Series series) {
+    List<Post> seriesPosts = postRepository.findBySeriesId(series.getId(), Sort.by("series.order"));
+
+    PostDetailResponse.SeriesNavigationResponse navigation =
+        PostDetailResponse.SeriesNavigationResponse.builder()
+            .allPosts(
+                seriesPosts.stream()
+                    .map(
+                        p ->
+                            PostDetailResponse.NavigationItem.builder()
+                                .id(p.getId())
+                                .title(p.getTitle())
+                                .slug(p.getSlug())
+                                .order(p.getSeries().getOrder())
+                                .current(p.getId().equals(currentPost.getId()))
+                                .build())
+                    .collect(Collectors.toList()))
+            .build();
+
+    // 이전/다음 글 설정
+    int currentOrder = currentPost.getSeries().getOrder();
+    seriesPosts.stream()
+        .filter(p -> p.getSeries().getOrder() == currentOrder - 1)
+        .findFirst()
+        .ifPresent(
+            prev ->
+                navigation.setPrev(
+                    PostDetailResponse.NavigationItem.builder()
+                        .id(prev.getId())
+                        .title(prev.getTitle())
+                        .slug(prev.getSlug())
+                        .order(prev.getSeries().getOrder())
+                        .build()));
+
+    seriesPosts.stream()
+        .filter(p -> p.getSeries().getOrder() == currentOrder + 1)
+        .findFirst()
+        .ifPresent(
+            next ->
+                navigation.setNext(
+                    PostDetailResponse.NavigationItem.builder()
+                        .id(next.getId())
+                        .title(next.getTitle())
+                        .slug(next.getSlug())
+                        .order(next.getSeries().getOrder())
+                        .build()));
+
+    return PostDetailResponse.SeriesDetailResponse.builder()
+        .seriesId(series.getId())
+        .seriesTitle(series.getTitle())
+        .seriesSlug(series.getSlug())
+        .seriesDescription(series.getDescription())
+        .currentOrder(currentOrder)
+        .totalCount(series.getTotalCount())
+        .navigation(navigation)
+        .build();
+  }
+
+  private PostSummaryResponse convertToSummaryResponseWithSeriesInfo(Post post, String lang) {
+    PostSummaryResponse response = convertToSummaryResponse(post, lang);
+
+    if (post.isSeries() && post.getSeries() != null) {
+      Post.SeriesInfo seriesInfo = post.getSeries();
+
+      // 해당 시리즈의 최신글인지 확인
+      Optional<Post> latestPost = postRepository.findLatestBySeriesId(seriesInfo.getSeriesId());
+      boolean isLatest = latestPost.map(p -> p.getId().equals(post.getId())).orElse(false);
+
+      seriesRepository
+          .findById(seriesInfo.getSeriesId())
+          .ifPresent(
+              series -> {
+                response.setSeries(
+                    PostSummaryResponse.SeriesInfoResponse.builder()
+                        .seriesId(series.getId())
+                        .seriesTitle(series.getTitle())
+                        .seriesSlug(series.getSlug())
+                        .currentOrder(post.getSeries().getOrder())
+                        .totalCount(series.getTotalCount())
+                        .isLatest(isLatest)
+                        .build());
+              });
+    }
+
+    return response;
   }
 
   @Cacheable(value = "metadata", key = "'tags'")

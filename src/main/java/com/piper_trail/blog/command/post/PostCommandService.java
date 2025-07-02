@@ -2,12 +2,10 @@ package com.piper_trail.blog.command.post;
 
 import com.piper_trail.blog.shared.domain.Post;
 import com.piper_trail.blog.shared.domain.PostRepository;
-import com.piper_trail.blog.shared.event.EventPublisher;
-import com.piper_trail.blog.shared.event.PostCreatedEvent;
-import com.piper_trail.blog.shared.event.PostDeletedEvent;
-import com.piper_trail.blog.shared.event.PostUpdatedEvent;
+import com.piper_trail.blog.shared.domain.Series;
+import com.piper_trail.blog.shared.domain.SeriesRepository;
+import com.piper_trail.blog.shared.event.*;
 import com.piper_trail.blog.shared.exception.ResourceNotFoundException;
-import com.piper_trail.blog.shared.util.MarkdownRenderer;
 import com.piper_trail.blog.shared.util.SlugGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,15 +20,15 @@ import java.util.List;
 public class PostCommandService {
 
   private final PostRepository postRepository;
+  private final SeriesRepository seriesRepository;
   private final EventPublisher eventPublisher;
   private final SlugGenerator slugGenerator;
-  private final MarkdownRenderer markdownRenderer;
 
   @Transactional
   public PostResponse createPost(CreatePostRequest request) {
     String uniqueSlug = ensureUniqueSlug(slugGenerator.generateSlug(request.getTitle()));
 
-    Post post =
+    Post.PostBuilder postBuilder =
         Post.builder()
             .title(request.getTitle())
             .subtitle(request.getSubtitle())
@@ -41,10 +39,38 @@ public class PostCommandService {
             .markdownContentEn(request.getMarkdownContentEn())
             .category(request.getCategory())
             .tags(request.getTags())
-            .viewCount(0)
-            .build();
+            .viewCount(0);
 
-    Post savedPost = postRepository.save(post);
+    // 시리즈 글인 경우
+    if (request.getSeriesId() != null) {
+      Series series =
+          seriesRepository
+              .findById(request.getSeriesId())
+              .orElseThrow(() -> new ResourceNotFoundException("series", request.getSeriesId()));
+
+      int order;
+      if (request.getSeriesOrder() != null) {
+        order = request.getSeriesOrder();
+        if (postRepository.existsBySeriesIdAndOrder(series.getId(), order)) {
+          throw new IllegalArgumentException("Series order " + order + " already exists");
+        }
+      } else {
+        order = series.getTotalCount() + 1;
+      }
+
+      postBuilder.isSeries(true);
+      postBuilder.series(
+          Post.SeriesInfo.builder()
+              .seriesId(series.getId())
+              .seriesTitle(series.getTitle())
+              .order(order)
+              .build());
+
+      series.setTotalCount(series.getTotalCount() + 1);
+      seriesRepository.save(series);
+    }
+
+    Post savedPost = postRepository.save(postBuilder.build());
 
     PostCreatedEvent event =
         new PostCreatedEvent(
@@ -55,46 +81,20 @@ public class PostCommandService {
             savedPost.getTags());
     eventPublisher.publish(event);
 
-    return convertToResponse(savedPost);
-  }
-
-  @Transactional
-  public PostResponse updatePost(String id, UpdatePostRequest request) {
-    Post existingPost =
-        postRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("post: " + id));
-
-    String previousTitle = existingPost.getTitle();
-    String previousSlug = existingPost.getSlug();
-
-    String newSlug = existingPost.getSlug();
-    if (!request.getTitle().equals(previousTitle)) {
-      String baseSlug = slugGenerator.generateSlug(request.getTitle());
-      newSlug = ensureUniqueSlug(baseSlug, id);
+    if (savedPost.isSeries()) {
+      SeriesPostAddedEvent seriesEvent =
+          new SeriesPostAddedEvent(
+              savedPost.getId(),
+              savedPost.getSeries().getSeriesId(),
+              savedPost.getTitle(),
+              savedPost.getSlug(),
+              savedPost.getSeries().getOrder(),
+              savedPost.getViewCount(),
+              savedPost.getCreatedAt());
+      eventPublisher.publish(seriesEvent);
     }
 
-    existingPost.setTitle(request.getTitle());
-    existingPost.setTitleEn(request.getTitleEn());
-    existingPost.setSubtitle(request.getSubtitle());
-    existingPost.setSubtitleEn(request.getSubtitleEn());
-    existingPost.setSlug(newSlug);
-    existingPost.setMarkdownContent(request.getMarkdownContent());
-    existingPost.setMarkdownContentEn(request.getMarkdownContentEn());
-    existingPost.setCategory(request.getCategory());
-    existingPost.setTags(request.getTags());
-
-    Post updatedPost = postRepository.save(existingPost);
-
-    eventPublisher.publish(
-        new PostUpdatedEvent(
-            updatedPost.getId(),
-            updatedPost.getTitle(),
-            updatedPost.getSlug(),
-            updatedPost.getCategory(),
-            updatedPost.getTags(),
-            previousTitle,
-            previousSlug));
-
-    return convertToResponse(updatedPost);
+    return convertToResponse(savedPost);
   }
 
   @Transactional
