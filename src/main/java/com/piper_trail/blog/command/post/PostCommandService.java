@@ -56,19 +56,29 @@ public class PostCommandService {
                     Series newSeries =
                         Series.builder()
                             .title(request.getSeriesTitle())
+                            .titleEn(request.getSeriesTitleEn())
                             .slug(seriesSlug)
                             .description(
                                 request.getSeriesDescription() != null
                                     ? request.getSeriesDescription()
                                     : "")
+                            .descriptionEn(request.getSeriesDescriptionEn())
                             .totalCount(0)
                             .build();
                     return seriesRepository.save(newSeries);
                   });
 
-      if (request.getSeriesDescription() != null
-          && !request.getSeriesDescription().equals(series.getDescription())) {
-        series.setDescription(request.getSeriesDescription());
+      if ((request.getSeriesDescription() != null
+              && !request.getSeriesDescription().equals(series.getDescription()))
+          || (request.getSeriesDescriptionEn() != null
+              && !request.getSeriesDescriptionEn().equals(series.getDescriptionEn()))) {
+
+        if (request.getSeriesDescription() != null) {
+          series.setDescription(request.getSeriesDescription());
+        }
+        if (request.getSeriesDescriptionEn() != null) {
+          series.setDescriptionEn(request.getSeriesDescriptionEn());
+        }
         seriesRepository.save(series);
       }
 
@@ -86,6 +96,7 @@ public class PostCommandService {
           Post.SeriesInfo.builder()
               .seriesId(series.getId())
               .seriesTitle(series.getTitle())
+              .seriesTitleEn(series.getTitleEn())
               .order(order)
               .build());
 

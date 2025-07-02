@@ -73,6 +73,7 @@ public class Post {
   public static class SeriesInfo {
     @Indexed private String seriesId;
     private String seriesTitle;
+    private String seriesTitleEn;
     private int order;
   }
 }

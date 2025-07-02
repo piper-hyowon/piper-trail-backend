@@ -33,6 +33,8 @@ public class CreatePostRequest {
   private List<String> tags = new ArrayList<>();
 
   private String seriesTitle; // null이면 일반 글
+  private String seriesTitleEn;
   private Integer seriesOrder; // null이면 자동 할당
   private String seriesDescription;
+  private String seriesDescriptionEn;
 }
