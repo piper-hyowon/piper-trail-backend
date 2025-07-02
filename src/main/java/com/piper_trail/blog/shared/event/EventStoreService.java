@@ -65,24 +65,29 @@ public class EventStoreService {
   private Map<String, Object> convertEventToPayload(DomainEvent event) {
     Map<String, Object> payload = new HashMap<>();
 
-    Class<?> eventClass = event.getClass();
+    Class<?> currentClass = event.getClass();
+    while (currentClass != null && !currentClass.equals(Object.class)) {
+      for (Field field : currentClass.getDeclaredFields()) {
+        try {
+          field.setAccessible(true);
+          String fieldName = field.getName();
+          Object fieldValue = field.get(event);
 
-    for (Field field : eventClass.getDeclaredFields()) {
-      try {
-        field.setAccessible(true);
-        String fieldName = field.getName();
-        Object fieldValue = field.get(event);
-
-        if (!payload.containsKey(fieldName) && fieldValue != null) {
-          payload.put(fieldName, convertToStorableObject(fieldValue));
+          // static 필드나 이미 존재하는 필드 스킵
+          if (!java.lang.reflect.Modifier.isStatic(field.getModifiers())
+              && !payload.containsKey(fieldName)
+              && fieldValue != null) {
+            payload.put(fieldName, convertToStorableObject(fieldValue));
+          }
+        } catch (IllegalAccessException e) {
+          log.warn(
+              "Could not access field {} of event {}",
+              field.getName(),
+              event.getClass().getSimpleName(),
+              e);
         }
-      } catch (IllegalAccessException e) {
-        log.warn(
-            "Could not access field {} of event {}",
-            field.getName(),
-            event.getClass().getSimpleName(),
-            e);
       }
+      currentClass = currentClass.getSuperclass();
     }
 
     return payload;
