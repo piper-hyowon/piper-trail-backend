@@ -92,13 +92,15 @@ public class PostCommandService {
         order = series.getTotalCount() + 1;
       }
 
-      postBuilder.series(
-          Post.SeriesInfo.builder()
-              .seriesId(series.getId())
-              .seriesTitle(series.getTitle())
-              .seriesTitleEn(series.getTitleEn())
-              .order(order)
-              .build());
+      postBuilder
+              .isSeries(true)
+              .series(
+                      Post.SeriesInfo.builder()
+                              .seriesId(series.getId())
+                              .seriesTitle(series.getTitle())
+                              .seriesTitleEn(series.getTitleEn())
+                              .order(order)
+                              .build());
 
       series.setTotalCount(series.getTotalCount() + 1);
       seriesRepository.save(series);
