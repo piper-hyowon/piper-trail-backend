@@ -339,6 +339,7 @@ public class PostQueryService {
                     PostSummaryResponse.SeriesInfoResponse.builder()
                         .seriesId(series.getId())
                         .seriesTitle(series.getTitle())
+                        .seriesTitleEn(series.getTitleEn())
                         .seriesSlug(series.getSlug())
                         .currentOrder(post.getSeries().getOrder())
                         .totalCount(series.getTotalCount())

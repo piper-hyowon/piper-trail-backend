@@ -34,6 +34,7 @@ public class PostSummaryResponse {
   public static class SeriesInfoResponse {
     private String seriesId;
     private String seriesTitle;
+    private String seriesTitleEn;
     private String seriesSlug;
     private int currentOrder;
     private int totalCount;
