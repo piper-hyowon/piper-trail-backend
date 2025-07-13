@@ -31,6 +31,7 @@ public class CreatePostRequest {
   private String category;
 
   private List<String> tags = new ArrayList<>();
+  private String thumbnailUrl;
 
   private String seriesTitle; // null이면 일반 글
   private String seriesTitleEn;

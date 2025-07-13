@@ -58,6 +58,8 @@ public class Post {
 
   @Builder.Default private int viewCount = 0;
 
+  private String thumbnailUrl;
+
   @CreatedDate private Instant createdAt;
 
   @LastModifiedDate private Instant updatedAt;

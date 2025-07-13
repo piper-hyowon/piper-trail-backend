@@ -38,6 +38,44 @@ public class ImageService {
   @Value("${spring.profiles.active:local}")
   private String activeProfile;
 
+  public String uploadThumbnail(MultipartFile thumbnail) {
+    try {
+      validateImage(thumbnail);
+
+      String dateFolder = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+      String environment = activeProfile.equals("prod") ? "prod" : "dev";
+      String basePath = String.format("%s/thumbnails/%s", environment, dateFolder);
+
+      // TODO: 중복 제거
+      String originalFilename = thumbnail.getOriginalFilename();
+      String extension =
+          originalFilename != null && originalFilename.contains(".")
+              ? originalFilename.substring(originalFilename.lastIndexOf(".")).toLowerCase()
+              : ".jpg";
+
+      String key = String.format("%s/%s%s", basePath, UUID.randomUUID(), extension);
+
+      PutObjectRequest putRequest =
+          PutObjectRequest.builder()
+              .bucket(bucketName)
+              .key(key)
+              .contentType(thumbnail.getContentType())
+              .build();
+
+      s3Client.putObject(
+          putRequest, RequestBody.fromInputStream(thumbnail.getInputStream(), thumbnail.getSize()));
+
+      String thumbnailUrl = publicUrl + "/" + key;
+
+      log.info("Thumbnail uploaded successfully: {}", thumbnailUrl);
+      return thumbnailUrl;
+
+    } catch (IOException e) {
+      log.error("Failed to upload thumbnail to R2", e);
+      throw new RuntimeException("Failed to upload thumbnail", e);
+    }
+  }
+
   public Map<String, String> uploadImages(List<MultipartFile> images, String imageMetadataJson) {
     Map<String, String> placeholderToUrl = new HashMap<>();
 

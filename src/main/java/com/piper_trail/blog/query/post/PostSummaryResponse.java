@@ -23,6 +23,7 @@ public class PostSummaryResponse {
   private String category;
   private List<String> tags;
   private int viewCount;
+  private String thumbnailUrl;
   private Instant createdAt;
   private Instant updatedAt;
   private SeriesInfoResponse series;

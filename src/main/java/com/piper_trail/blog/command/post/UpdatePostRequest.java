@@ -31,4 +31,6 @@ public class UpdatePostRequest {
   private String category;
 
   private List<String> tags = new ArrayList<>();
+
+  private String thumbnailUrl;
 }

@@ -39,6 +39,7 @@ public class PostCommandService {
             .markdownContentEn(request.getMarkdownContentEn())
             .category(request.getCategory())
             .tags(request.getTags())
+            .thumbnailUrl(request.getThumbnailUrl())
             .viewCount(0);
 
     // 시리즈 글인 경우
@@ -93,14 +94,14 @@ public class PostCommandService {
       }
 
       postBuilder
-              .isSeries(true)
-              .series(
-                      Post.SeriesInfo.builder()
-                              .seriesId(series.getId())
-                              .seriesTitle(series.getTitle())
-                              .seriesTitleEn(series.getTitleEn())
-                              .order(order)
-                              .build());
+          .isSeries(true)
+          .series(
+              Post.SeriesInfo.builder()
+                  .seriesId(series.getId())
+                  .seriesTitle(series.getTitle())
+                  .seriesTitleEn(series.getTitleEn())
+                  .order(order)
+                  .build());
 
       series.setTotalCount(series.getTotalCount() + 1);
       seriesRepository.save(series);

@@ -474,6 +474,7 @@ public class PostQueryService {
         .category(post.getCategory())
         .tags(post.getTags())
         .viewCount(post.getViewCount())
+        .thumbnailUrl(post.getThumbnailUrl())
         .createdAt(post.getCreatedAt())
         .updatedAt(post.getUpdatedAt())
         .build();

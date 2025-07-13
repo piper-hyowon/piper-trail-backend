@@ -47,7 +47,9 @@ public class PostCommandController {
       @RequestParam(value = "category", required = false) String category,
       @RequestParam(value = "tags", required = false) String tagsJson,
       @RequestParam(value = "imageMetadata", required = false) String imageMetadataJson,
-      @RequestPart(value = "images", required = false) List<MultipartFile> images) {
+      @RequestParam(value = "thumbnailUrl", required = false) String thumbnailUrl,
+      @RequestPart(value = "images", required = false) List<MultipartFile> images,
+      @RequestPart(value = "thumbnail", required = false) MultipartFile thumbnail) {
 
     try {
       CreatePostRequest request = new CreatePostRequest();
@@ -64,6 +66,15 @@ public class PostCommandController {
         request.setTags(tags);
       } else {
         request.setTags(new ArrayList<>());
+      }
+
+      // 썸네일 처리
+      if (thumbnail != null && !thumbnail.isEmpty()) {
+        log.info("Processing thumbnail image: {}", thumbnail.getOriginalFilename());
+        String uploadedThumbnailUrl = imageService.uploadThumbnail(thumbnail);
+        request.setThumbnailUrl(uploadedThumbnailUrl);
+      } else if (StringUtils.hasText(thumbnailUrl)) {
+        request.setThumbnailUrl(thumbnailUrl);
       }
 
       if (images != null && !images.isEmpty() && StringUtils.hasText(imageMetadataJson)) {
