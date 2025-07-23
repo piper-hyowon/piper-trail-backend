@@ -11,7 +11,10 @@ spring:
     mongodb:
       uri: ${MONGO_URI}
       auto-index-creation: true
-
+  servlet:
+    multipart:
+      max-file-size: 90MB
+      max-request-size: 90MB
 server:
   port: ${PORT:8080}
 

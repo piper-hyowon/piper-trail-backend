@@ -22,7 +22,7 @@ import java.util.*;
 @Slf4j
 public class ImageService {
 
-  private static final long MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+  private static final long MAX_FILE_SIZE = 90 * 1024 * 1024; // 90MB
   private static final List<String> ALLOWED_EXTENSIONS =
       Arrays.asList(".jpg", ".jpeg", ".png", ".gif", ".webp");
 
