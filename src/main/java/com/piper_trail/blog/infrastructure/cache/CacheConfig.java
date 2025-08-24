@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 
 @Configuration
 @EnableCaching
@@ -37,7 +38,13 @@ public class CacheConfig {
             "search",
             "dashboard",
             "post-stats"));
-    cacheManager.setCaffeine(Caffeine.newBuilder().maximumSize(cacheMaxSize).recordStats());
+
+    cacheManager.setCaffeine(
+        Caffeine.newBuilder()
+            .maximumSize(cacheMaxSize)
+            .expireAfterWrite(5, TimeUnit.MINUTES) // 5분 후 자동 만료
+            .recordStats());
+
     return cacheManager;
   }
 }
