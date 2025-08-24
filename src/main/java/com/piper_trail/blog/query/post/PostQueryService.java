@@ -333,6 +333,7 @@ public class PostQueryService {
                 .category(response.getCategory())
                 .tags(response.getTags())
                 .viewCount(response.getViewCount())
+                .thumbnailUrl(response.getThumbnailUrl())
                 .createdAt(response.getCreatedAt())
                 .updatedAt(response.getUpdatedAt())
                 .series(
@@ -509,7 +510,6 @@ public class PostQueryService {
     return builder.build();
   }
 
-  @Cacheable(value = "post_stats", key = "'slug:' + #slug")
   public PostStatsResponse getPostStatsBySlug(String slug) {
     Post post =
         postRepository
