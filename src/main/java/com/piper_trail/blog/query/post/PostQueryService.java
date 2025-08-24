@@ -33,7 +33,8 @@ public class PostQueryService {
   @Cacheable(
       value = "posts_list",
       key =
-          "'all:' + #lang + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + #pageable.sort.toString()")
+          "'all:' + #lang + ':' + #pageable.pageNumber + ':' + #pageable.pageSize + ':' + "
+              + "(#pageable.sort.isSorted() ? #pageable.sort.iterator().next().property + '_' + #pageable.sort.iterator().next().direction : 'unsorted')")
   public PagedResponse<PostSummaryResponse> getAllPosts(Pageable pageable, String lang) {
     Page<Post> postPage = postRepository.findAll(pageable);
     return convertToPagedResponse(postPage, lang);
