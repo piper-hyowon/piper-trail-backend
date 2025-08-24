@@ -12,8 +12,9 @@ public class HttpCacheUtils {
       CacheControl.maxAge(Duration.ofDays(365)) // 1년
           .mustRevalidate(); // ETag로 검증
 
+  // 포스트 목록: no-cache → 항상 ETag로 확인, 변경 없으면 304
   public static final CacheControl POST_LIST_CACHE =
-      CacheControl.maxAge(Duration.ofMinutes(5)).mustRevalidate();
+          CacheControl.noCache();
 
   public static final CacheControl METADATA_CACHE =
       CacheControl.maxAge(Duration.ofDays(1)).mustRevalidate();
