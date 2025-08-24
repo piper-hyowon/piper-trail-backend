@@ -31,11 +31,18 @@ public class CacheInvalidationService {
   @EventListener
   @Order(1)
   public void handlePostUpdated(PostUpdatedEvent event) {
+    log.debug("Invalidating cache for post update: {}", event.getPostId());
     cacheVersionService.incrementVersion();
-    evictFromCache("post", "slug:" + event.getSlug());
+
+    // 모든 언어 캐시 무효화
+    evictFromCache("post", "slug:" + event.getSlug() + ":ko");
+    evictFromCache("post", "slug:" + event.getSlug() + ":en");
+
     if (event.isSlugChanged()) {
-      evictFromCache("post", "slug:" + event.getPreviousSlug());
+      evictFromCache("post", "slug:" + event.getPreviousSlug() + ":ko");
+      evictFromCache("post", "slug:" + event.getPreviousSlug() + ":en");
     }
+
     evictCache("posts_list");
     evictCache("posts_search");
     evictCache("metadata");
@@ -44,8 +51,13 @@ public class CacheInvalidationService {
   @EventListener
   @Order(1)
   public void handlePostDeleted(PostDeletedEvent event) {
+    log.debug("Invalidating cache for post deletion: {}", event.getPostId());
     cacheVersionService.incrementVersion();
-    evictFromCache("post", "slug:" + event.getSlug());
+
+    // 모든 언어 캐시 무효화
+    evictFromCache("post", "slug:" + event.getSlug() + ":ko");
+    evictFromCache("post", "slug:" + event.getSlug() + ":en");
+
     evictCache("posts_list");
     evictCache("posts_search");
     evictCache("metadata");
