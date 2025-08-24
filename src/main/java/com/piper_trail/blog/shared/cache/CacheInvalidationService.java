@@ -10,6 +10,8 @@ import org.springframework.cache.CacheManager;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +21,7 @@ public class CacheInvalidationService {
   private final CacheManager cacheManager;
   private final CacheVersionService cacheVersionService;
 
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   @EventListener
   @Order(1)
   public void handlePostCreated(PostCreatedEvent event) {
@@ -26,8 +29,11 @@ public class CacheInvalidationService {
     evictCache("posts_list");
     evictCache("posts_search");
     evictCache("metadata");
+    evictCache("categories");
+    evictCache("tags");
   }
 
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   @EventListener
   @Order(1)
   public void handlePostUpdated(PostUpdatedEvent event) {
@@ -48,6 +54,7 @@ public class CacheInvalidationService {
     evictCache("metadata");
   }
 
+  @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
   @EventListener
   @Order(1)
   public void handlePostDeleted(PostDeletedEvent event) {
