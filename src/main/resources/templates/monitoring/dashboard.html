@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoring Dashboard</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: white;
+            color: black;
+            padding: 20px;
+            margin: 0;
+        }
+
+        h1 {
+            font-size: 20px;
+            border-bottom: 2px solid black;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 16px;
+            margin-top: 30px;
+            margin-bottom: 10px;
+            text-decoration: underline;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background: #f0f0f0;
+        }
+
+        .status-up {
+            color: green;
+        }
+
+        .status-down {
+            color: red;
+        }
+
+        .hit-rate-good {
+            color: green;
+            font-weight: bold;
+        }
+
+        .hit-rate-ok {
+            color: orange;
+        }
+
+        .hit-rate-bad {
+            color: red;
+        }
+
+        .container {
+            max-width: 800px;
+        }
+
+        .cache-name {
+            font-family: 'Courier New', monospace;
+            background: #f5f5f5;
+            padding: 2px 4px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Monitoring Dashboard</h1>
+
+    <h2>System Status</h2>
+    <table>
+        <tr>
+            <th>Metric</th>
+            <th>Value</th>
+        </tr>
+        <tr>
+            <td>Status</td>
+            <td class="status-up" th:class="${systemHealth.status == 'UP' ? 'status-up' : 'status-down'}"
+                th:text="${systemHealth.status}">UP
+            </td>
+        </tr>
+        <tr>
+            <td>Uptime (hours)</td>
+            <td th:text="${#numbers.formatDecimal(systemHealth.uptimeSeconds / 3600.0, 1, 1)}">0</td>
+        </tr>
+        <tr>
+            <td>Memory</td>
+            <td th:text="${systemHealth.memoryUsedMb} + ' / ' + ${systemHealth.memoryMaxMb} + ' MB (' + ${systemHealth.memoryUsagePercent} + '%)'">
+                0 / 0 MB
+            </td>
+        </tr>
+        <tr>
+            <td>MongoDB</td>
+            <td th:text="${systemHealth.mongoDbStatus}">Connected</td>
+        </tr>
+    </table>
+
+    <h2>Content Stats</h2>
+    <table>
+        <tr>
+            <th>Type</th>
+            <th>Count</th>
+        </tr>
+        <tr>
+            <td>Total Posts</td>
+            <td th:text="${performance.totalPosts}">0</td>
+        </tr>
+        <tr>
+            <td>Total Comments</td>
+            <td th:text="${performance.totalComments}">0</td>
+        </tr>
+        <tr>
+            <td>Spam Rate</td>
+            <td th:text="${performance.spamCommentRate} + '%'">0%</td>
+        </tr>
+    </table>
+
+    <h2>Daily Views (Last 7 Days)</h2>
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>Views</th>
+        </tr>
+        <tr th:each="entry : ${performance.dailyViews}">
+            <td th:text="${entry.key}">-</td>
+            <td th:text="${entry.value}">0</td>
+        </tr>
+    </table>
+
+    <h2>Top Posts</h2>
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Views</th>
+        </tr>
+        <tr th:each="post : ${performance.topPosts}">
+            <td th:text="${post.title}">-</td>
+            <td th:text="${post.viewCount}">0</td>
+        </tr>
+    </table>
+
+    <h2>Cache Performance</h2>
+    <table>
+        <tr>
+            <th>Cache Name</th>
+            <th>Hit Rate</th>
+            <th>Hits / Misses</th>
+            <th>Total Requests</th>
+            <th>Size</th>
+        </tr>
+        <tr th:each="cache : ${cacheStats}">
+            <td class="cache-name" th:text="${cache.key}">-</td>
+            <td th:class="${cache.value.hitRate >= 80 ? 'hit-rate-good' : (cache.value.hitRate >= 50 ? 'hit-rate-ok' : 'hit-rate-bad')}"
+                th:text="${cache.value.hitRate} + '%'">0%
+            </td>
+            <td th:text="${cache.value.hitCount} + ' / ' + ${cache.value.missCount}">0 / 0</td>
+            <td th:text="${cache.value.requestCount}">0</td>
+            <td th:text="${cache.value.estimatedSize}">0</td>
+        </tr>
+    </table>
+
+    <p style="margin-top: 40px; font-size: 12px; color: gray;">
+        Last updated: <span th:text="${#dates.format(#dates.createNow(), 'yyyy-MM-dd HH:mm:ss')}">-</span>
+        | Auto-refresh in <span id="countdown">30</span>s
+    </p>
+</div>
+
+<script>
+    // 자동 새로고침 카운트다운
+    let seconds = 30;
+    const countdown = setInterval(() => {
+        seconds--;
+        document.getElementById('countdown').textContent = seconds;
+        if (seconds <= 0) {
+            location.reload();
+        }
+    }, 1000);
+</script>
+</body>
+</html>

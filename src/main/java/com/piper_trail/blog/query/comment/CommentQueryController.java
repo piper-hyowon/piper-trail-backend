@@ -25,6 +25,7 @@ public class CommentQueryController {
         commentQueryService.getCommentsByPostId(postId, PageRequest.of(page, size)));
   }
 
+  // TODO: 관리자 대시보드에서 사용
   @GetMapping("/comments")
   @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<List<CommentAdminResponse>> getAllComments() {

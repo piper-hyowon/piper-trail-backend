@@ -54,6 +54,8 @@ public class SecurityConfig {
                     .permitAll()
                     .requestMatchers("/chat/**")
                     .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/monitoring")
+                    .permitAll()
                     .requestMatchers("/error")
                     .permitAll()
                     .requestMatchers("/wake-up")
