@@ -29,7 +29,7 @@ public class StatisticsCommandService {
   @EventListener
   @Transactional
   @CacheEvict(
-      value = {"dashboard", "post-stats"},
+      value = {"dashboard", "post_stats"},
       allEntries = true)
   public void handlePostViewedEvent(PostViewedEvent event) {
     try {

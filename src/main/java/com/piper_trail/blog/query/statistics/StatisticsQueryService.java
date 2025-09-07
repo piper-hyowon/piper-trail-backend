@@ -54,7 +54,7 @@ public class StatisticsQueryService {
         .build();
   }
 
-  @Cacheable(value = "post-stats", key = "#postId")
+  @Cacheable(value = "post_stats", key = "#postId")
   public PostStatisticsResponse getPostStatistics(String postId) {
 
     Post post = mongoTemplate.findById(postId, Post.class);
